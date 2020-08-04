@@ -4,16 +4,13 @@
  */
 
 // The editor creator to use.
-import ClassicEditorBase from '@ckeditor/ckeditor5-editor-classic/src/classiceditor';
+import ClassicEditor from '@ckeditor/ckeditor5-editor-classic/src/classiceditor';
 
 import Essentials from '@ckeditor/ckeditor5-essentials/src/essentials';
-import UploadAdapter from '@ckeditor/ckeditor5-adapter-ckfinder/src/uploadadapter';
 import Autoformat from '@ckeditor/ckeditor5-autoformat/src/autoformat';
 import Bold from '@ckeditor/ckeditor5-basic-styles/src/bold';
 import Italic from '@ckeditor/ckeditor5-basic-styles/src/italic';
 import BlockQuote from '@ckeditor/ckeditor5-block-quote/src/blockquote';
-import CKFinder from '@ckeditor/ckeditor5-ckfinder/src/ckfinder';
-import EasyImage from '@ckeditor/ckeditor5-easy-image/src/easyimage';
 import Heading from '@ckeditor/ckeditor5-heading/src/heading';
 import Image from '@ckeditor/ckeditor5-image/src/image';
 import ImageCaption from '@ckeditor/ckeditor5-image/src/imagecaption';
@@ -30,18 +27,72 @@ import Table from '@ckeditor/ckeditor5-table/src/table';
 import TableToolbar from '@ckeditor/ckeditor5-table/src/tabletoolbar';
 import TextTransformation from '@ckeditor/ckeditor5-typing/src/texttransformation';
 
-export default class ClassicEditor extends ClassicEditorBase {}
+import Alignment from '@ckeditor/ckeditor5-alignment/src/alignment.js';
+import FontSize from '@ckeditor/ckeditor5-font/src/fontsize.js';
+import HorizontalLine from '@ckeditor/ckeditor5-horizontal-line/src/horizontalline.js';
+import ImageResize from '@ckeditor/ckeditor5-image/src/imageresize.js';
+import MediaEmbedToolbar from '@ckeditor/ckeditor5-media-embed/src/mediaembedtoolbar.js';
+import TableProperties from '@ckeditor/ckeditor5-table/src/tableproperties';
+import TableCellProperties from '@ckeditor/ckeditor5-table/src/tablecellproperties';
+import GFMDataProcessor from '@ckeditor/ckeditor5-markdown-gfm/src/gfmdataprocessor';
+
+import Plugin from '@ckeditor/ckeditor5-core/src/plugin';
+import FileRepository from '@ckeditor/ckeditor5-upload/src/filerepository';
+
+import './custom.css';
+
+function MarkdownPlugin( editor ) {
+	editor.data.processor = new GFMDataProcessor( editor.editing.view.document );
+}
+
+class CustomUploadAdapter extends Plugin {
+	static get requires() {
+		return [ FileRepository ];
+	}
+
+	static get pluginName() {
+		return 'CustomUploadAdapter';
+	}
+
+	init() {
+		const uploadFunction = this.editor.config._config.uploadFunction;
+
+		if ( typeof uploadFunction !== 'function' ) {
+			console.warn( 'No `uploadFunction` was provided' );
+			return;
+		}
+
+		this.editor.plugins.get( FileRepository ).createUploadAdapter = loader => {
+			return new Adapter( loader, uploadFunction );
+		};
+	}
+}
+
+class Adapter {
+	constructor( loader, uploadFunction ) {
+		this.loader = loader;
+		this.uploadFunction = uploadFunction;
+	}
+
+	upload() {
+		return this.loader.file.then((file) => this.uploadFunction(file));
+	}
+
+	abort() {
+		// Do nothing
+	}
+}
+
+class FullEditor extends ClassicEditor {}
+class MarkdownEditor extends ClassicEditor {}
 
 // Plugins to include in the build.
-ClassicEditor.builtinPlugins = [
+FullEditor.builtinPlugins = [
 	Essentials,
-	UploadAdapter,
 	Autoformat,
 	Bold,
 	Italic,
 	BlockQuote,
-	CKFinder,
-	EasyImage,
 	Heading,
 	Image,
 	ImageCaption,
@@ -56,47 +107,111 @@ ClassicEditor.builtinPlugins = [
 	PasteFromOffice,
 	Table,
 	TableToolbar,
-	TextTransformation
+	TextTransformation,
+
+	Alignment,
+	FontSize,
+	HorizontalLine,
+	ImageResize,
+	MediaEmbedToolbar,
+	TableProperties,
+	TableCellProperties,
+	CustomUploadAdapter
 ];
 
 // Editor configuration.
-ClassicEditor.defaultConfig = {
+FullEditor.defaultConfig = {
 	toolbar: {
 		items: [
 			'heading',
 			'|',
 			'bold',
 			'italic',
+			'fontSize',
+			'alignment',
+			'|',
 			'link',
 			'bulletedList',
 			'numberedList',
+			'blockQuote',
+			'horizontalLine',
 			'|',
 			'indent',
 			'outdent',
 			'|',
 			'imageUpload',
-			'blockQuote',
 			'insertTable',
 			'mediaEmbed',
+			'|',
 			'undo',
 			'redo'
 		]
 	},
 	image: {
 		toolbar: [
+			'imageTextAlternative',
 			'imageStyle:full',
-			'imageStyle:side',
-			'|',
-			'imageTextAlternative'
+			'imageStyle:side'
 		]
 	},
 	table: {
 		contentToolbar: [
 			'tableColumn',
 			'tableRow',
-			'mergeTableCells'
+			'mergeTableCells',
+			'tableProperties',
+			'tableCellProperties'
 		]
 	},
 	// This value must be kept in sync with the language defined in webpack.config.js.
 	language: 'en'
+};
+
+// Plugins to include in the build.
+MarkdownEditor.builtinPlugins = [
+	Essentials,
+	Autoformat,
+	Bold,
+	Italic,
+	BlockQuote,
+	Heading,
+	Image,
+	ImageUpload,
+	Link,
+	List,
+	Paragraph,
+	PasteFromOffice,
+	TextTransformation,
+
+	HorizontalLine,
+	MarkdownPlugin,
+	CustomUploadAdapter
+];
+
+// Editor configuration.
+MarkdownEditor.defaultConfig = {
+	toolbar: {
+		items: [
+			'heading',
+			'|',
+			'bold',
+			'italic',
+			'|',
+			'link',
+			'bulletedList',
+			'numberedList',
+			'blockQuote',
+			'horizontalLine',
+			'imageUpload',
+			'|',
+			'undo',
+			'redo'
+		]
+	},
+	// This value must be kept in sync with the language defined in webpack.config.js.
+	language: 'en'
+};
+
+export default {
+	FullEditor, MarkdownEditor
 };
