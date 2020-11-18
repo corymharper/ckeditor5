@@ -5,6 +5,6 @@ git fetch upstream
 git merge upstream/stable
 ```
 
-To release, run `npm publish` in the `packages/ckeditor5-build-classic` directory.
+To release, first run `npm run build` then run `npm publish` in the `packages/ckeditor5-build-classic` directory.
 
 Relevant docs: https://ckeditor.com/docs/ckeditor5/latest/builds/guides/development/custom-builds.html.
