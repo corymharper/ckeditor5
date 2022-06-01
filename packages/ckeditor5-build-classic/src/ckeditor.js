@@ -26,7 +26,7 @@ import PasteFromOffice from '@ckeditor/ckeditor5-paste-from-office/src/pastefrom
 import Table from '@ckeditor/ckeditor5-table/src/table';
 import TableToolbar from '@ckeditor/ckeditor5-table/src/tabletoolbar';
 import TextTransformation from '@ckeditor/ckeditor5-typing/src/texttransformation';
-import CloudServices from '@ckeditor/ckeditor5-cloud-services/src/cloudservices';
+import LinkImage from '@ckeditor/ckeditor5-link/src/linkimage';
 
 import Alignment from '@ckeditor/ckeditor5-alignment/src/alignment.js';
 import FontSize from '@ckeditor/ckeditor5-font/src/fontsize.js';
@@ -102,6 +102,7 @@ FullEditor.builtinPlugins = [
 	ImageUpload,
 	Indent,
 	Link,
+	LinkImage,
 	List,
 	MediaEmbed,
 	Paragraph,
@@ -182,6 +183,7 @@ MarkdownEditor.builtinPlugins = [
 	Image,
 	ImageUpload,
 	Link,
+	LinkImage,
 	List,
 	Paragraph,
 	PasteFromOffice,
@@ -210,6 +212,12 @@ MarkdownEditor.defaultConfig = {
 			'|',
 			'undo',
 			'redo'
+		]
+	},
+	image: {
+		toolbar: [
+			'imageTextAlternative',
+			'linkImage'
 		]
 	},
 	// This value must be kept in sync with the language defined in webpack.config.js.
