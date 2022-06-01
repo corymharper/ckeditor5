@@ -218,14 +218,6 @@ MarkdownEditor.defaultConfig = {
 		toolbar: [
 			'linkImage'
 		],
-		styles: [
-			{
-				name: 'alignLeft',
-				title: 'Left aligned image',
-				icon: objectLeft,
-				className: 'image-style-align-left'
-			},
-		],
 	},
 	// This value must be kept in sync with the language defined in webpack.config.js.
 	language: 'en'
