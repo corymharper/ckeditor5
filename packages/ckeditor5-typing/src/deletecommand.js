@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2020, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -63,7 +63,8 @@ export default class DeleteCommand extends Command {
 	 *
 	 * @fires execute
 	 * @param {Object} [options] The command options.
-	 * @param {'character'} [options.unit='character'] See {@link module:engine/model/utils/modifyselection~modifySelection}'s options.
+	 * @param {'character'|'codePoint'|'word'} [options.unit='character']
+	 * See {@link module:engine/model/utils/modifyselection~modifySelection}'s options.
 	 * @param {Number} [options.sequence=1] A number describing which subsequent delete event it is without the key being released.
 	 * See the {@link module:engine/view/document~Document#event:delete} event data.
 	 * @param {module:engine/model/selection~Selection} [options.selection] Selection to remove. If not set, current model selection
@@ -77,6 +78,7 @@ export default class DeleteCommand extends Command {
 			this._buffer.lock();
 
 			const selection = writer.createSelection( options.selection || doc.selection );
+			const sequence = options.sequence || 1;
 
 			// Do not replace the whole selected content if selection was collapsed.
 			// This prevents such situation:
@@ -87,12 +89,24 @@ export default class DeleteCommand extends Command {
 
 			// Try to extend the selection in the specified direction.
 			if ( selection.isCollapsed ) {
-				model.modifySelection( selection, { direction: this.direction, unit: options.unit } );
+				model.modifySelection( selection, {
+					direction: this.direction,
+					unit: options.unit,
+					treatEmojiAsSingleUnit: true
+				} );
 			}
 
 			// Check if deleting in an empty editor. See #61.
-			if ( this._shouldEntireContentBeReplacedWithParagraph( options.sequence || 1 ) ) {
+			if ( this._shouldEntireContentBeReplacedWithParagraph( sequence ) ) {
 				this._replaceEntireContentWithParagraph( writer );
+
+				return;
+			}
+
+			// Check if deleting in the first empty block.
+			// See https://github.com/ckeditor/ckeditor5/issues/8137.
+			if ( this._shouldReplaceFirstBlockWithParagraph( selection, sequence ) ) {
+				this.editor.execute( 'paragraph', { selection } );
 
 				return;
 			}
@@ -180,6 +194,7 @@ export default class DeleteCommand extends Command {
 	 * The entire content is replaced with the paragraph. Selection is moved inside the paragraph.
 	 *
 	 * @private
+	 * @param {module:engine/model/writer~Writer} writer The model writer.
 	 */
 	_replaceEntireContentWithParagraph( writer ) {
 		const model = this.editor.model;
@@ -192,5 +207,54 @@ export default class DeleteCommand extends Command {
 		writer.insert( paragraph, limitElement );
 
 		writer.setSelection( paragraph, 0 );
+	}
+
+	/**
+	 * Checks if the selection is inside an empty element that is the first child of the limit element
+	 * and should be replaced with a paragraph.
+	 *
+	 * @private
+	 * @param {module:engine/model/selection~Selection} selection The selection.
+	 * @param {Number} sequence A number describing which subsequent delete event it is without the key being released.
+	 * @returns {Boolean}
+	 */
+	_shouldReplaceFirstBlockWithParagraph( selection, sequence ) {
+		const model = this.editor.model;
+
+		// Does nothing if user pressed and held the "Backspace" key or it was a "Delete" button.
+		if ( sequence > 1 || this.direction != 'backward' ) {
+			return false;
+		}
+
+		if ( !selection.isCollapsed ) {
+			return false;
+		}
+
+		const position = selection.getFirstPosition();
+		const limitElement = model.schema.getLimitElement( position );
+		const limitElementFirstChild = limitElement.getChild( 0 );
+
+		// Only elements that are direct children of the limit element can be replaced.
+		// Unwrapping from a block quote should be handled in a dedicated feature.
+		if ( position.parent != limitElementFirstChild ) {
+			return false;
+		}
+
+		// A block should be replaced only if it was empty.
+		if ( !selection.containsEntireContent( limitElementFirstChild ) ) {
+			return false;
+		}
+
+		// Replace with a paragraph only if it's allowed there.
+		if ( !model.schema.checkChild( limitElement, 'paragraph' ) ) {
+			return false;
+		}
+
+		// Does nothing if the limit element already contains only a paragraph.
+		if ( limitElementFirstChild.name == 'paragraph' ) {
+			return false;
+		}
+
+		return true;
 	}
 }

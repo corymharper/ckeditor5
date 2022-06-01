@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2020, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -233,9 +233,8 @@ export default class TreeWalker {
 
 		// Get node just after the current position.
 		// Use a highly optimized version instead of checking the text node first and then getting the node after. See #6582.
-		const positionParent = position.parent;
-		const textNodeAtPosition = getTextNodeAtPosition( position, positionParent );
-		const node = textNodeAtPosition ? textNodeAtPosition : getNodeAfterPosition( position, positionParent, textNodeAtPosition );
+		const textNodeAtPosition = getTextNodeAtPosition( position, parent );
+		const node = textNodeAtPosition ? textNodeAtPosition : getNodeAfterPosition( position, parent, textNodeAtPosition );
 
 		if ( node instanceof Element ) {
 			if ( !this.shallow ) {
@@ -382,10 +381,9 @@ function formatReturnValue( type, item, previousPosition, nextPosition, length )
 /**
  * Type of the step made by {@link module:engine/model/treewalker~TreeWalker}.
  * Possible values: `'elementStart'` if walker is at the beginning of a node, `'elementEnd'` if walker is at the end of node,
- * `'character'` if walker traversed over a character, or `'text'` if walker traversed over multiple characters (available in
- * character merging mode, see {@link module:engine/model/treewalker~TreeWalker#constructor}).
+ * or `'text'` if walker traversed over text.
  *
- * @typedef {'elementStart'|'elementEnd'|'character'|'text'} module:engine/model/treewalker~TreeWalkerValueType
+ * @typedef {'elementStart'|'elementEnd'|'text'} module:engine/model/treewalker~TreeWalkerValueType
  */
 
 /**
@@ -404,7 +402,7 @@ function formatReturnValue( type, item, previousPosition, nextPosition, length )
  * the position after the item.
  * * Backward iteration: For `'elementEnd'` it is last position inside element. For all other types it is the position
  * before the item.
- * @property {Number} [length] Length of the item. For `'elementStart'` and `'character'` it is 1. For `'text'` it is
+ * @property {Number} [length] Length of the item. For `'elementStart'` it is 1. For `'text'` it is
  * the length of the text. For `'elementEnd'` it is `undefined`.
  */
 

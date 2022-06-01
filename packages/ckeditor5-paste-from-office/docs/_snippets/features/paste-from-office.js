@@ -1,14 +1,15 @@
 /**
- * @license Copyright (c) 2003-2020, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
-/* globals ClassicEditor, console, window, document */
+/* globals ClassicEditor, console, window, document, ListProperties */
 
 import { CS_CONFIG } from '@ckeditor/ckeditor5-cloud-services/tests/_utils/cloud-services-config';
 
 ClassicEditor
 	.create( document.querySelector( '#snippet-paste-from-office' ), {
+		extraPlugins: [ ListProperties ],
 		toolbar: {
 			items: [
 				'heading',
@@ -22,36 +23,37 @@ ClassicEditor
 				'italic',
 				'underline',
 				'strikethrough',
-				'|',
+				'-',
 				'alignment',
 				'|',
 				'numberedList',
 				'bulletedList',
 				'|',
-				'indent',
 				'outdent',
+				'indent',
 				'|',
 				'link',
-				'imageUpload',
+				'uploadImage',
 				'insertTable',
 				'horizontalLine',
 				'|',
 				'undo',
 				'redo'
 			],
-			viewportTopOffset: window.getViewportTopOffsetConfig()
+			shouldNotGroupWhenFull: true
+		},
+		ui: {
+			viewportOffset: {
+				top: window.getViewportTopOffsetConfig()
+			}
 		},
 		image: {
-			styles: [
-				'full',
-				'alignLeft',
-				'alignRight'
-			],
 			toolbar: [
-				'imageStyle:alignLeft',
-				'imageStyle:full',
-				'imageStyle:alignRight',
+				'imageStyle:inline',
+				'imageStyle:wrapText',
+				'imageStyle:breakText',
 				'|',
+				'toggleImageCaption',
 				'imageTextAlternative'
 			]
 		},
@@ -70,6 +72,13 @@ ClassicEditor
 		fontSize: {
 			options: [ 10, 12, 14, 'default', 18, 20, 22 ],
 			supportAllValues: true
+		},
+		list: {
+			properties: {
+				styles: true,
+				startIndex: true,
+				reversed: false
+			}
 		},
 		placeholder: 'Paste the content here to test the feature.',
 		cloudServices: CS_CONFIG

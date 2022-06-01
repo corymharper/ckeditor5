@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2020, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -7,10 +7,7 @@
  * @module code-block/converters
  */
 
-import {
-	rawSnippetTextToModelDocumentFragment,
-	getPropertyAssociation
-} from './utils';
+import { getPropertyAssociation } from './utils';
 
 /**
  * A model-to-view (both editing and data) converter for the `codeBlock` element.
@@ -72,12 +69,12 @@ export function modelToViewCodeBlockInsertion( model, languageDefs, useLabels = 
 			preAttributes.spellcheck = 'false';
 		}
 
-		const pre = writer.createContainerElement( 'pre', preAttributes );
 		const code = writer.createContainerElement( 'code', {
 			class: languagesToClasses[ codeBlockLanguage ] || null
 		} );
 
-		writer.insert( writer.createPositionAt( pre, 0 ), code );
+		const pre = writer.createContainerElement( 'pre', preAttributes, code );
+
 		writer.insert( targetViewPosition, pre );
 		mapper.bindElements( data.item, code );
 	};
@@ -120,11 +117,11 @@ export function modelToDataViewSoftBreakInsertion( model ) {
  *
  * Sample input:
  *
- *		<pre><code class="language-javascript">foo();\nbar();</code></pre>
+ *		<pre><code class="language-javascript">foo();bar();</code></pre>
  *
  * Sample output:
  *
- *		<codeBlock language="javascript">foo();<softBreak></softBreak>bar();</codeBlock>
+ *		<codeBlock language="javascript">foo();bar();</codeBlock>
  *
  * @param {module:engine/view/view~View} editingView
  * @param {Array.<module:code-block/codeblock~CodeBlockLanguageDefinition>} languageDefs The normalized language
@@ -144,21 +141,26 @@ export function dataViewToModelCodeBlockInsertion( editingView, languageDefs ) {
 	const defaultLanguageName = languageDefs[ 0 ].language;
 
 	return ( evt, data, conversionApi ) => {
-		const viewItem = data.viewItem;
-		const viewChild = viewItem.getChild( 0 );
+		const viewCodeElement = data.viewItem;
+		const viewPreElement = viewCodeElement.parent;
 
-		if ( !viewChild || !viewChild.is( 'element', 'code' ) ) {
+		if ( !viewPreElement || !viewPreElement.is( 'element', 'pre' ) ) {
+			return;
+		}
+
+		// In case of nested code blocks we don't want to convert to another code block.
+		if ( data.modelCursor.findAncestor( 'codeBlock' ) ) {
 			return;
 		}
 
 		const { consumable, writer } = conversionApi;
 
-		if ( !consumable.test( viewItem, { name: true } ) || !consumable.test( viewChild, { name: true } ) ) {
+		if ( !consumable.test( viewCodeElement, { name: true } ) ) {
 			return;
 		}
 
 		const codeBlock = writer.createElement( 'codeBlock' );
-		const viewChildClasses = [ ...viewChild.getClassNames() ];
+		const viewChildClasses = [ ...viewCodeElement.getClassNames() ];
 
 		// As we're to associate each class with a model language, a lack of class (empty class) can be
 		// also associated with a language if the language definition was configured so. Pushing an empty
@@ -183,24 +185,127 @@ export function dataViewToModelCodeBlockInsertion( editingView, languageDefs ) {
 			writer.setAttribute( 'language', defaultLanguageName, codeBlock );
 		}
 
-		// HTML elements are invalid content for `<code>`.
-		// Read only text nodes.
-		const textData = [ ...editingView.createRangeIn( viewChild ) ]
-			.filter( current => current.type === 'text' )
-			.map( ( { item } ) => item.data )
-			.join( '' );
-		const fragment = rawSnippetTextToModelDocumentFragment( writer, textData );
-
-		writer.append( fragment, codeBlock );
+		conversionApi.convertChildren( viewCodeElement, codeBlock );
 
 		// Let's try to insert code block.
 		if ( !conversionApi.safeInsert( codeBlock, data.modelCursor ) ) {
 			return;
 		}
 
-		consumable.consume( viewItem, { name: true } );
-		consumable.consume( viewChild, { name: true } );
+		consumable.consume( viewCodeElement, { name: true } );
 
 		conversionApi.updateConversionResult( codeBlock, data );
+	};
+}
+
+/**
+ * A view-to-model converter for new line characters in `<pre>`.
+ *
+ * Sample input:
+ *
+ *		<pre><code class="language-javascript">foo();\nbar();</code></pre>
+ *
+ * Sample output:
+ *
+ *		<codeBlock language="javascript">foo();<softBreak></softBreak>bar();</codeBlock>
+ *
+ * @returns {Function} Returns a conversion callback.
+ */
+export function dataViewToModelTextNewlinesInsertion() {
+	return ( evt, data, { consumable, writer } ) => {
+		let position = data.modelCursor;
+
+		// When node is already converted then do nothing.
+		if ( !consumable.test( data.viewItem ) ) {
+			return;
+		}
+
+		// When not inside `codeBlock` then do nothing.
+		if ( !position.findAncestor( 'codeBlock' ) ) {
+			return;
+		}
+
+		consumable.consume( data.viewItem );
+
+		const text = data.viewItem.data;
+		const textLines = text.split( '\n' ).map( data => writer.createText( data ) );
+		const lastLine = textLines[ textLines.length - 1 ];
+
+		for ( const node of textLines ) {
+			writer.insert( node, position );
+			position = position.getShiftedBy( node.offsetSize );
+
+			if ( node !== lastLine ) {
+				const softBreak = writer.createElement( 'softBreak' );
+
+				writer.insert( softBreak, position );
+				position = writer.createPositionAfter( softBreak );
+			}
+		}
+
+		data.modelRange = writer.createRange(
+			data.modelCursor,
+			position
+		);
+		data.modelCursor = position;
+	};
+}
+
+/**
+ * A view-to-model converter that handles orphan text nodes (white spaces, new lines, etc.)
+ * that surround `<code>` inside `<pre>`.
+ *
+ * Sample input:
+ *
+ *		// White spaces
+ *		<pre> <code>foo()</code> </pre>
+ *
+ *		// White spaces
+ *		<pre>      <code>foo()</code>      </pre>
+ *
+ *		// White spaces
+ *		<pre>			<code>foo()</code>			</pre>
+ *
+ *		// New lines
+ *		<pre>
+ *			<code>foo()</code>
+ *		</pre>
+ *
+ *		// Redundant text
+ *		<pre>ABC<code>foo()</code>DEF</pre>
+ *
+ * Unified output for each case:
+ *
+ *		<codeBlock language="plaintext">foo()</codeBlock>
+ *
+ * @returns {Function} Returns a conversion callback.
+ */
+export function dataViewToModelOrphanNodeConsumer() {
+	return ( evt, data, { consumable } ) => {
+		const preElement = data.viewItem;
+
+		// Don't clean up nested pre elements. Their content should stay as it is, they are not upcasted
+		// to code blocks.
+		if ( preElement.findAncestor( 'pre' ) ) {
+			return;
+		}
+
+		const preChildren = Array.from( preElement.getChildren() );
+		const childCodeElement = preChildren.find( node => node.is( 'element', 'code' ) );
+
+		// <code>-less <pre>. It will not upcast to code block in the model, skipping.
+		if ( !childCodeElement ) {
+			return;
+		}
+
+		for ( const child of preChildren ) {
+			if ( child === childCodeElement || !child.is( '$text' ) ) {
+				continue;
+			}
+
+			// Consuming the orphan to remove it from the input data.
+			// Second argument in `consumable.consume` is discarded for text nodes.
+			consumable.consume( child, { name: true } );
+		}
 	};
 }

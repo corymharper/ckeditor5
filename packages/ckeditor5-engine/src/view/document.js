@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2020, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -10,6 +10,7 @@
 import DocumentSelection from './documentselection';
 import Collection from '@ckeditor/ckeditor5-utils/src/collection';
 import mix from '@ckeditor/ckeditor5-utils/src/mix';
+import BubblingEmitterMixin from './observer/bubblingemittermixin';
 import ObservableMixin from '@ckeditor/ckeditor5-utils/src/observablemixin';
 
 // @if CK_DEBUG_ENGINE // const { logDocument } = require( '../dev-utils/utils' );
@@ -18,6 +19,7 @@ import ObservableMixin from '@ckeditor/ckeditor5-utils/src/observablemixin';
  * Document class creates an abstract layer over the content editable area, contains a tree of view elements and
  * {@link module:engine/view/documentselection~DocumentSelection view selection} associated with this document.
  *
+ * @mixes module:engine/view/observer/bubblingemittermixin~BubblingEmitterMixin
  * @mixes module:utils/observablemixin~ObservableMixin
  */
 export default class Document {
@@ -79,6 +81,18 @@ export default class Document {
 		this.set( 'isFocused', false );
 
 		/**
+		 * `true` while the user is making a selection in the document (e.g. holding the mouse button and moving the cursor).
+		 * When they stop selecting, the property goes back to `false`.
+		 *
+		 * This property is updated by the {@link module:engine/view/observer/selectionobserver~SelectionObserver}.
+		 *
+		 * @readonly
+		 * @observable
+		 * @member {Boolean} module:engine/view/document~Document#isSelecting
+		 */
+		this.set( 'isSelecting', false );
+
+		/**
 		 * True if composition is in progress inside the document.
 		 *
 		 * This property is updated by the {@link module:engine/view/observer/compositionobserver~CompositionObserver}.
@@ -127,7 +141,8 @@ export default class Document {
 	 *
 	 * * adding or removing attribute from elements,
 	 * * changes inside of {@link module:engine/view/uielement~UIElement UI elements},
-	 * * {@link module:engine/model/differ~Differ#refreshItem marking some of the model elements to be re-converted}.
+	 * * {@link module:engine/controller/editingcontroller~EditingController#reconvertItem marking some of the model elements to be
+	 * re-converted}.
 	 *
 	 * Try to avoid changes which touch view structure:
 	 *
@@ -203,6 +218,7 @@ export default class Document {
 	// @if CK_DEBUG_ENGINE // }
 }
 
+mix( Document, BubblingEmitterMixin );
 mix( Document, ObservableMixin );
 
 /**

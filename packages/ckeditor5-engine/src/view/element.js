@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2020, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -11,6 +11,7 @@ import Node from './node';
 import Text from './text';
 import TextProxy from './textproxy';
 import toMap from '@ckeditor/ckeditor5-utils/src/tomap';
+import toArray from '@ckeditor/ckeditor5-utils/src/toarray';
 import isIterable from '@ckeditor/ckeditor5-utils/src/isiterable';
 import Matcher from './matcher';
 import StylesMap from './stylesmap';
@@ -128,6 +129,21 @@ export default class Element extends Node {
 		 * @member {Map}
 		 */
 		this._customProperties = new Map();
+
+		/**
+		 * A list of attribute names that should be rendered in the editing pipeline even though filtering mechanisms
+		 * implemented in the {@link module:engine/view/domconverter~DomConverter} (for instance,
+		 * {@link module:engine/view/domconverter~DomConverter#shouldRenderAttribute}) would filter them out.
+		 *
+		 * These attributes can be specified as an option when the element is created by
+		 * the {@link module:engine/view/downcastwriter~DowncastWriter}. To check whether an unsafe an attribute should
+		 * be permitted, use the {@link #shouldRenderUnsafeAttribute} method.
+		 *
+		 * @private
+		 * @readonly
+		 * @member {Array.<String>}
+		 */
+		this._unsafeAttributesToRender = [];
 	}
 
 	/**
@@ -442,10 +458,11 @@ export default class Element extends Node {
 	/**
 	 * Returns iterator that contains all style names.
 	 *
+	 * @param {Boolean} [expand=false] Expand shorthand style properties and return all equivalent style representations.
 	 * @returns {Iterable.<String>}
 	 */
-	getStyleNames() {
-		return this._styles.getStyleNames();
+	getStyleNames( expand = false ) {
+		return this._styles.getStyleNames( expand );
 	}
 
 	/**
@@ -543,6 +560,19 @@ export default class Element extends Node {
 			( classes == '' ? '' : ` class="${ classes }"` ) +
 			( !styles ? '' : ` style="${ styles }"` ) +
 			( attributes == '' ? '' : ` ${ attributes }` );
+	}
+
+	/**
+	 * Decides whether an unsafe attribute is whitelisted and should be rendered in the editing pipeline even though filtering mechanisms
+	 * like {@link module:engine/view/domconverter~DomConverter#shouldRenderAttribute} say it should not.
+	 *
+	 * Unsafe attribute names can be specified when creating an element via {@link module:engine/view/downcastwriter~DowncastWriter}.
+	 *
+	 * @param {String} attributeName The name of the attribute to be checked.
+	 * @returns {Boolean}
+	 */
+	shouldRenderUnsafeAttribute( attributeName ) {
+		return this._unsafeAttributesToRender.includes( attributeName );
 	}
 
 	/**
@@ -724,8 +754,9 @@ export default class Element extends Node {
 	_addClass( className ) {
 		this._fireChange( 'attributes', this );
 
-		className = Array.isArray( className ) ? className : [ className ];
-		className.forEach( name => this._classes.add( name ) );
+		for ( const name of toArray( className ) ) {
+			this._classes.add( name );
+		}
 	}
 
 	/**
@@ -742,8 +773,9 @@ export default class Element extends Node {
 	_removeClass( className ) {
 		this._fireChange( 'attributes', this );
 
-		className = Array.isArray( className ) ? className : [ className ];
-		className.forEach( name => this._classes.delete( name ) );
+		for ( const name of toArray( className ) ) {
+			this._classes.delete( name );
+		}
 	}
 
 	/**
@@ -789,8 +821,9 @@ export default class Element extends Node {
 	_removeStyle( property ) {
 		this._fireChange( 'attributes', this );
 
-		property = Array.isArray( property ) ? property : [ property ];
-		property.forEach( name => this._styles.remove( name ) );
+		for ( const name of toArray( property ) ) {
+			this._styles.remove( name );
+		}
 	}
 
 	/**

@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2020, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -26,6 +26,7 @@ import PasteFromOffice from '@ckeditor/ckeditor5-paste-from-office/src/pastefrom
 import Table from '@ckeditor/ckeditor5-table/src/table';
 import TableToolbar from '@ckeditor/ckeditor5-table/src/tabletoolbar';
 import TextTransformation from '@ckeditor/ckeditor5-typing/src/texttransformation';
+import CloudServices from '@ckeditor/ckeditor5-cloud-services/src/cloudservices';
 
 import Alignment from '@ckeditor/ckeditor5-alignment/src/alignment.js';
 import FontSize from '@ckeditor/ckeditor5-font/src/fontsize.js';
@@ -136,8 +137,8 @@ FullEditor.defaultConfig = {
 			'blockQuote',
 			'horizontalLine',
 			'|',
-			'indent',
 			'outdent',
+			'indent',
 			'|',
 			'imageUpload',
 			'insertTable',
@@ -149,9 +150,12 @@ FullEditor.defaultConfig = {
 	},
 	image: {
 		toolbar: [
-			'imageTextAlternative',
-			'imageStyle:full',
-			'imageStyle:side'
+			'imageStyle:inline',
+			'imageStyle:block',
+			'imageStyle:side',
+			'|',
+			'toggleImageCaption',
+			'imageTextAlternative'
 		]
 	},
 	table: {

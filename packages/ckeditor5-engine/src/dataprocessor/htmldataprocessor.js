@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2020, CKSource - Frederico Knabben. All rights reserved.
+ * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -28,26 +28,23 @@ export default class HtmlDataProcessor {
 		/**
 		 * A DOM parser instance used to parse an HTML string to an HTML document.
 		 *
-		 * @private
 		 * @member {DOMParser}
 		 */
-		this._domParser = new DOMParser();
+		this.domParser = new DOMParser();
 
 		/**
 		 * A DOM converter used to convert DOM elements to view elements.
 		 *
-		 * @private
 		 * @member {module:engine/view/domconverter~DomConverter}
 		 */
-		this._domConverter = new DomConverter( document, { blockFillerMode: 'nbsp' } );
+		this.domConverter = new DomConverter( document, { renderingMode: 'data' } );
 
 		/**
 		 * A basic HTML writer instance used to convert DOM elements to an HTML string.
 		 *
-		 * @private
-		 * @member {module:engine/dataprocessor/basichtmlwriter~BasicHtmlWriter}
+		 * @member {module:engine/dataprocessor/htmlwriter~HtmlWriter}
 		 */
-		this._htmlWriter = new BasicHtmlWriter();
+		this.htmlWriter = new BasicHtmlWriter();
 	}
 
 	/**
@@ -59,10 +56,10 @@ export default class HtmlDataProcessor {
 	 */
 	toData( viewFragment ) {
 		// Convert view DocumentFragment to DOM DocumentFragment.
-		const domFragment = this._domConverter.viewToDom( viewFragment, document );
+		const domFragment = this.domConverter.viewToDom( viewFragment, document );
 
 		// Convert DOM DocumentFragment to HTML output.
-		return this._htmlWriter.getHtml( domFragment );
+		return this.htmlWriter.getHtml( domFragment );
 	}
 
 	/**
@@ -76,7 +73,36 @@ export default class HtmlDataProcessor {
 		const domFragment = this._toDom( data );
 
 		// Convert DOM DocumentFragment to view DocumentFragment.
-		return this._domConverter.domToView( domFragment );
+		return this.domConverter.domToView( domFragment );
+	}
+
+	/**
+	 * Registers a {@link module:engine/view/matcher~MatcherPattern} for view elements whose content should be treated as raw data
+	 * and not processed during the conversion from the DOM to the view elements.
+	 *
+	 * The raw data can be later accessed by a
+	 * {@link module:engine/view/element~Element#getCustomProperty custom property of a view element} called `"$rawContent"`.
+	 *
+	 * @param {module:engine/view/matcher~MatcherPattern} pattern Pattern matching all view elements whose content should
+	 * be treated as raw data.
+	 */
+	registerRawContentMatcher( pattern ) {
+		this.domConverter.registerRawContentMatcher( pattern );
+	}
+
+	/**
+	 * If the processor is set to use marked fillers, it will insert `&nbsp;` fillers wrapped in `<span>` elements
+	 * (`<span data-cke-filler="true">&nbsp;</span>`) instead of regular `&nbsp;` characters.
+	 *
+	 * This mode allows for a more precise handling of the block fillers (so they do not leak into the editor content) but
+	 * bloats the editor data with additional markup.
+	 *
+	 * This mode may be required by some features and will be turned on by them automatically.
+	 *
+	 * @param {'default'|'marked'} type Whether to use the default or the marked `&nbsp;` block fillers.
+	 */
+	useFillerType( type ) {
+		this.domConverter.blockFillerMode = type == 'marked' ? 'markedNbsp' : 'nbsp';
 	}
 
 	/**
@@ -88,12 +114,19 @@ export default class HtmlDataProcessor {
 	 * @returns {DocumentFragment}
 	 */
 	_toDom( data ) {
-		const document = this._domParser.parseFromString( data, 'text/html' );
-		const fragment = document.createDocumentFragment();
-		const nodes = document.body.childNodes;
+		// Wrap data with a <body> tag so leading non-layout nodes (like <script>, <style>, HTML comment)
+		// will be preserved in the body collection.
+		// Do it only for data that is not a full HTML document.
+		if ( !data.match( /<(?:html|body|head|meta)(?:\s[^>]*)?>/i ) ) {
+			data = `<body>${ data }</body>`;
+		}
 
-		while ( nodes.length > 0 ) {
-			fragment.appendChild( nodes[ 0 ] );
+		const document = this.domParser.parseFromString( data, 'text/html' );
+		const fragment = document.createDocumentFragment();
+		const bodyChildNodes = document.body.childNodes;
+
+		while ( bodyChildNodes.length > 0 ) {
+			fragment.appendChild( bodyChildNodes[ 0 ] );
 		}
 
 		return fragment;
