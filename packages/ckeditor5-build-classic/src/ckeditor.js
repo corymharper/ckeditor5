@@ -27,8 +27,6 @@ import Table from '@ckeditor/ckeditor5-table/src/table';
 import TableToolbar from '@ckeditor/ckeditor5-table/src/tabletoolbar';
 import TextTransformation from '@ckeditor/ckeditor5-typing/src/texttransformation';
 import LinkImage from '@ckeditor/ckeditor5-link/src/linkimage';
-import SourceEditing from '@ckeditor/ckeditor5-source-editing';
-import HtmlEmbed from '@ckeditor/ckeditor5-html-embed';
 
 import Alignment from '@ckeditor/ckeditor5-alignment/src/alignment.js';
 import FontSize from '@ckeditor/ckeditor5-font/src/fontsize.js';
@@ -112,8 +110,6 @@ FullEditor.builtinPlugins = [
 	Table,
 	TableToolbar,
 	TextTransformation,
-	SourceEditing,
-	HtmlEmbed,
 
 	Alignment,
 	FontSize,
@@ -148,9 +144,6 @@ FullEditor.defaultConfig = {
 			'uploadImage',
 			'insertTable',
 			'mediaEmbed',
-			'htmlEmbed',
-			'|',
-			'sourceEditing',
 			'|',
 			'undo',
 			'redo'
