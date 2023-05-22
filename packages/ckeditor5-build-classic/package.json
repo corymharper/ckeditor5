@@ -1,6 +1,6 @@
 {
   "name": "@sparksuite/ckeditor5-builds",
-  "version": "34.1.1",
+  "version": "34.1.2",
   "description": "The classic editor build of CKEditor 5 – the best browser-based rich text editor.",
   "keywords": [
     "ckeditor5-build",
@@ -41,6 +41,8 @@
     "@ckeditor/ckeditor5-link": "^34.1.0",
     "@ckeditor/ckeditor5-list": "^34.1.0",
     "@ckeditor/ckeditor5-media-embed": "^34.1.0",
+    "@ckeditor/ckeditor5-source-editing": "^34.1.0",
+    "@ckeditor/ckeditor5-html-embed": "^34.1.0",
     "@ckeditor/ckeditor5-paragraph": "^34.1.0",
     "@ckeditor/ckeditor5-paste-from-office": "^34.1.0",
     "@ckeditor/ckeditor5-table": "^34.1.0",
