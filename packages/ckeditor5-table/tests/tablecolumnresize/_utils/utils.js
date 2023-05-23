@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+ * @license Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -7,9 +7,10 @@ import { global } from 'ckeditor5/src/utils';
 import Rect from '@ckeditor/ckeditor5-utils/src/dom/rect';
 import { Point } from '@ckeditor/ckeditor5-widget/tests/widgetresize/_utils/utils';
 import TableColumnResizeEditing from '../../../src/tablecolumnresize/tablecolumnresizeediting';
+import { getTableColumnsWidths } from '../../../src/tablecolumnresize/utils';
 
 export const tableColumnResizeMouseSimulator = {
-	down( editor, domTarget, options ) {
+	down( editor, domTarget, options = {} ) {
 		const preventDefault = options.preventDefault || sinon.spy().named( 'preventDefault' );
 		const stop = options.stop || sinon.spy().named( 'stop' );
 
@@ -78,11 +79,12 @@ export function getViewColumnWidthsPx( domTable ) {
 	Array.from( domTable.querySelectorAll( 'col' ) ).forEach( col => {
 		widths.push( getWidth( col ) );
 	} );
+
 	return widths;
 }
 
 export function getModelColumnWidthsPc( modelTable ) {
-	return modelTable.getAttribute( 'columnWidths' ).replaceAll( '%', '' ).split( ',' );
+	return getTableColumnsWidths( modelTable ).map( width => width.replace( '%', '' ) );
 }
 
 export function getViewColumnWidthsPc( viewTable ) {
@@ -99,7 +101,7 @@ export function getViewColumnWidthsPc( viewTable ) {
 export function getDomResizer( domTable, columnIndex, rowIndex ) {
 	const rows = Array.from( domTable.querySelectorAll( 'tr' ) );
 	const row = rows[ rowIndex ? rowIndex : 0 ];
-	const domResizer = Array.from( row.querySelectorAll( '.table-column-resizer' ) )[ columnIndex ];
+	const domResizer = Array.from( row.querySelectorAll( '.ck-table-column-resizer' ) )[ columnIndex ];
 
 	return domResizer;
 }

@@ -1,4 +1,4 @@
-# Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+# Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
 #
 #                                     !!! IMPORTANT !!!
 #
@@ -12,7 +12,7 @@
 #
 msgid ""
 msgstr ""
-"Language-Team: Hungarian (https://www.transifex.com/ckeditor/teams/11143/hu/)\n"
+"Language-Team: Hungarian (https://app.transifex.com/ckeditor/teams/11143/hu/)\n"
 "Language: hu\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
@@ -43,3 +43,7 @@ msgstr "%0 / %1"
 msgctxt "A generic error message displayed on upload failure. The file name is concatenated to this text."
 msgid "Cannot upload file:"
 msgstr "Nem sikerült a fájl feltöltése:"
+
+msgctxt "Accessible label of the specific editing area of the editor acting as a root of the entire application."
+msgid "Rich Text Editor. Editing area: %0"
+msgstr "Rich text szerkesztő. Szerkesztési terület: %0"

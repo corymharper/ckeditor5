@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+ * @license Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -93,7 +93,7 @@ describe( 'PasteFromOffice - integration', () => {
 		type: 'integration',
 		browsers,
 		editorConfig: {
-			plugins: [ Clipboard, Paragraph, Bold, PasteFromOffice ]
+			plugins: [ Clipboard, Paragraph, Bold, ShiftEnter, PasteFromOffice ]
 		}
 	} );
 
@@ -141,6 +141,15 @@ describe( 'PasteFromOffice - integration', () => {
 		browsers,
 		editorConfig: {
 			plugins: [ Clipboard, Paragraph, Bold, PasteFromOffice, PageBreak ]
+		}
+	} );
+
+	generateTests( {
+		input: 'google-docs-br-paragraphs',
+		type: 'integration',
+		browsers,
+		editorConfig: {
+			plugins: [ Clipboard, Paragraph, Bold, ShiftEnter, PasteFromOffice ]
 		}
 	} );
 } );

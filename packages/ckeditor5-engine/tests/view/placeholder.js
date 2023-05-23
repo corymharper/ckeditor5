@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+ * @license Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -405,6 +405,34 @@ describe( 'placeholder', () => {
 			expect( viewRoot.getChild( 0 ).hasAttribute( 'data-placeholder' ) ).to.be.true;
 			expect( viewRoot.getChild( 0 ).hasClass( 'ck-placeholder' ) ).to.be.false;
 		} );
+
+		it( 'should hide the placeholder when there is a composition in progress in the host element (keepOnFocus = true)', () => {
+			setData( view, '<div>[]</div>' );
+			const element = viewRoot.getChild( 0 );
+
+			enablePlaceholder( {
+				view,
+				element,
+				text: 'foo bar baz',
+				keepOnFocus: true
+			} );
+
+			expect( viewRoot.getChild( 0 ).hasAttribute( 'data-placeholder' ) ).to.be.true;
+			expect( viewRoot.getChild( 0 ).hasClass( 'ck-placeholder' ) ).to.be.true;
+
+			// Make sure that renderer is not locked before the view got updated.
+			view._renderer.on( 'set:isComposing', () => {
+				expect( viewDocument.isComposing ).to.be.true;
+				expect( view._renderer.isComposing ).to.be.false;
+				expect( viewRoot.getChild( 0 ).hasAttribute( 'data-placeholder' ) ).to.be.true;
+				expect( viewRoot.getChild( 0 ).hasClass( 'ck-placeholder' ) ).to.be.false;
+			} );
+
+			viewDocument.isComposing = true;
+
+			expect( viewRoot.getChild( 0 ).hasAttribute( 'data-placeholder' ) ).to.be.true;
+			expect( viewRoot.getChild( 0 ).hasClass( 'ck-placeholder' ) ).to.be.false;
+		} );
 	} );
 
 	describe( 'disablePlaceholder', () => {
@@ -573,6 +601,16 @@ describe( 'placeholder', () => {
 			const element = viewRoot.getChild( 0 );
 
 			expect( needsPlaceholder( element, true ) ).to.be.true;
+		} );
+
+		it( 'should return false if we want to keep placeholder when element is focused and document is in composition mode', () => {
+			setData( view, '<p>[]</p>' );
+			viewDocument.isFocused = true;
+			viewDocument.isComposing = true;
+
+			const element = viewRoot.getChild( 0 );
+
+			expect( needsPlaceholder( element, true ) ).to.be.false;
 		} );
 	} );
 } );

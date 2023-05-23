@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+ * @license Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -51,7 +51,19 @@ describe( 'StyleUI', () => {
 
 			beforeEach( () => {
 				dropdown = editor.ui.componentFactory.create( 'style' );
+				dropdown.render();
+
+				document.body.appendChild( dropdown.element );
+
+				// Trigger lazy init.
+				dropdown.isOpen = true;
+				dropdown.isOpen = false;
+
 				command = editor.commands.get( 'style' );
+			} );
+
+			afterEach( () => {
+				dropdown.element.remove();
 			} );
 
 			it( 'should be registered in the component factory', () => {
@@ -70,8 +82,6 @@ describe( 'StyleUI', () => {
 			} );
 
 			it( 'should have a static CSS class', () => {
-				dropdown.render();
-
 				expect( dropdown.element.classList.contains( 'ck-style-dropdown' ) ).to.be.true;
 			} );
 
@@ -168,7 +178,7 @@ describe( 'StyleUI', () => {
 
 					panel.fire( new EventInfo( buttonMock, 'execute' ) );
 
-					sinon.assert.calledOnceWithExactly( commandExecuteStub, 'style', 'foo' );
+					sinon.assert.calledOnceWithExactly( commandExecuteStub, 'style', { styleName: 'foo' } );
 				} );
 
 				it( 'should bind #activeStyles to the command', () => {

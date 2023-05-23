@@ -1,21 +1,22 @@
 /**
- * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+ * @license Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
 /* globals document, console */
 
+import InlineEditor from '../src/inlineeditor';
 import InlineEditorUI from '../src/inlineeditorui';
 import InlineEditorUIView from '../src/inlineeditoruiview';
 
 import HtmlDataProcessor from '@ckeditor/ckeditor5-engine/src/dataprocessor/htmldataprocessor';
 
-import InlineEditor from '../src/inlineeditor';
+import Context from '@ckeditor/ckeditor5-core/src/context';
+import EditorWatchdog from '@ckeditor/ckeditor5-watchdog/src/editorwatchdog';
+import ContextWatchdog from '@ckeditor/ckeditor5-watchdog/src/contextwatchdog';
 import Plugin from '@ckeditor/ckeditor5-core/src/plugin';
 import Paragraph from '@ckeditor/ckeditor5-paragraph/src/paragraph';
 import Bold from '@ckeditor/ckeditor5-basic-styles/src/bold';
-import DataApiMixin from '@ckeditor/ckeditor5-core/src/editor/utils/dataapimixin';
-import ElementApiMixin from '@ckeditor/ckeditor5-core/src/editor/utils/elementapimixin';
 import RootElement from '@ckeditor/ckeditor5-engine/src/model/rootelement';
 
 import testUtils from '@ckeditor/ckeditor5-core/tests/_utils/utils';
@@ -57,12 +58,13 @@ describe( 'InlineEditor', () => {
 			expect( editor.data.processor ).to.be.instanceof( HtmlDataProcessor );
 		} );
 
-		it( 'has a Data Interface', () => {
-			expect( testUtils.isMixed( InlineEditor, DataApiMixin ) ).to.be.true;
+		it( 'mixes DataApiMixin', () => {
+			expect( InlineEditor.prototype ).have.property( 'setData' ).to.be.a( 'function' );
+			expect( InlineEditor.prototype ).have.property( 'getData' ).to.be.a( 'function' );
 		} );
 
-		it( 'has a Element Interface', () => {
-			expect( testUtils.isMixed( InlineEditor, ElementApiMixin ) ).to.be.true;
+		it( 'mixes ElementApiMixin', () => {
+			expect( InlineEditor.prototype ).have.property( 'updateSourceElement' ).to.be.a( 'function' );
 		} );
 
 		it( 'creates main root element', () => {
@@ -367,7 +369,21 @@ describe( 'InlineEditor', () => {
 				} );
 		} );
 
+		// We don't update the source element by default, so after destroy, it should contain the data
+		// from the editing pipeline.
+		it( 'don\'t set the data back to the editor element', () => {
+			editor.setData( '<p>a</p><heading>b</heading>' );
+
+			return editor.destroy()
+				.then( () => {
+					expect( editorElement.innerHTML ).to.equal( '' );
+				} );
+		} );
+
+		// Adding `updateSourceElementOnDestroy` config to the editor allows setting the data
+		// back to the source element after destroy.
 		it( 'sets the data back to the editor element', () => {
+			editor.config.set( 'updateSourceElementOnDestroy', true );
 			editor.setData( '<p>a</p><heading>b</heading>' );
 
 			return editor.destroy()
@@ -385,6 +401,20 @@ describe( 'InlineEditor', () => {
 					plugins: [ Paragraph, Bold ]
 				} )
 				.then( newEditor => newEditor.destroy() );
+		} );
+	} );
+
+	describe( 'static fields', () => {
+		it( 'InlineEditor.Context', () => {
+			expect( InlineEditor.Context ).to.equal( Context );
+		} );
+
+		it( 'InlineEditor.EditorWatchdog', () => {
+			expect( InlineEditor.EditorWatchdog ).to.equal( EditorWatchdog );
+		} );
+
+		it( 'InlineEditor.ContextWatchdog', () => {
+			expect( InlineEditor.ContextWatchdog ).to.equal( ContextWatchdog );
 		} );
 	} );
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+ * @license Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -11,6 +11,13 @@
 
 const fs = require( 'fs' );
 const path = require( 'path' );
+const minimist = require( 'minimist' );
+
+const argv = minimist( process.argv.slice( 2 ), {
+	string: [
+		'npm-tag'
+	]
+} );
 
 // This scripts publish changes.
 //
@@ -24,11 +31,12 @@ const path = require( 'path' );
 // Use:
 // npm run release:publish -- --dry-run
 
-require( '@ckeditor/ckeditor5-dev-env' )
+require( '@ckeditor/ckeditor5-dev-release-tools' )
 	.releaseSubRepositories( {
 		cwd: process.cwd(),
 		packages: 'packages',
 		releaseBranch: 'release',
+		npmTag: argv[ 'npm-tag' ],
 		customReleases: [
 			'ckeditor5'
 		],
@@ -45,9 +53,31 @@ require( '@ckeditor/ckeditor5-dev-env' )
 				// automated/manual tests, translations, documentation, content styles.
 				// If you need to release anything from the directory, type a full path to the file/directory.
 				'src/*.js',
+				'src/*.d.ts',
 				'build/ckeditor5-dll.js',
 				'build/ckeditor5-dll.manifest.json',
 				'build/translations/*.js'
+			]
+		},
+		optionalFilesAndDirectories: {
+			// The `#default` key is used for all packages that do not have own definition.
+			default: [
+				// Some of CKEditor 5 features do not contain the UI layer. Hence, it is not required to publish the directory.
+				'lang',
+				// Some of CKEditor 5 features do not define styles or icons.
+				'theme',
+				// The CKEditor 5 framework does not define features.
+				'ckeditor5-metadata.json'
+			],
+
+			// Package-specific definition of optional files and directories.
+			'@ckeditor/ckeditor5-theme-lark': [
+				// Like in defaults, this package does not contain the UI layer. Hence, it is not required to publish the directory.
+				'lang',
+				// This package does not contain any source code, but only styles in the `theme` directory. Hence, `theme` is not optional.
+				'src',
+				// Like in defaults, this package does not define features.
+				'ckeditor5-metadata.json'
 			]
 		},
 		dryRun: process.argv.includes( '--dry-run' )

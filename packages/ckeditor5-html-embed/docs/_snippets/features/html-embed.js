@@ -1,17 +1,21 @@
 /**
- * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+ * @license Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
 /* globals window, document, location, console */
 
-import ClassicEditor from '@ckeditor/ckeditor5-build-classic/src/ckeditor';
+import { HtmlEmbed } from '@ckeditor/ckeditor5-html-embed';
+import { CodeBlock } from '@ckeditor/ckeditor5-code-block';
+import { CKBox } from '@ckeditor/ckeditor5-ckbox';
+import { PictureEditing, ImageResize, AutoImage } from '@ckeditor/ckeditor5-image';
+import { LinkImage } from '@ckeditor/ckeditor5-link';
 import { CS_CONFIG } from '@ckeditor/ckeditor5-cloud-services/tests/_utils/cloud-services-config';
-import HtmlEmbed from '@ckeditor/ckeditor5-html-embed/src/htmlembed';
-import CodeBlock from '@ckeditor/ckeditor5-code-block/src/codeblock';
 
-ClassicEditor.builtinPlugins.push( HtmlEmbed );
-ClassicEditor.builtinPlugins.push( CodeBlock );
+// Umberto combines all `packages/*/docs` into the `docs/` directory. The import path must be valid after merging all directories.
+import ClassicEditor from '../build-classic';
+
+ClassicEditor.builtinPlugins.push( HtmlEmbed, CodeBlock, PictureEditing, ImageResize, AutoImage, LinkImage, CKBox );
 
 /* eslint-disable max-len */
 const initialData =
@@ -23,7 +27,7 @@ const initialData =
 	<p><a href="http://eepurl.com/c3zRPr"><img alt="Join newsletter" src="https://img.shields.io/badge/join-newsletter-00cc99.svg" /></a>&nbsp;<a href="https://twitter.com/ckeditor"><img alt="Follow twitter" src="https://img.shields.io/badge/follow-twitter-00cc99.svg" /></a></p>
 </div>
 
-<p>The classic editor build for CKEditor 5. Read more about the <a href="https://ckeditor.com/docs/ckeditor5/latest/installation/advanced/alternative-setups/predefined-builds.html#classic-editor"><strong>classic editor build</strong></a> and see the <a href="https://ckeditor.com/docs/ckeditor5/latest/examples/builds/classic-editor.html"><strong>demo</strong></a>.</p>
+<p>The classic editor build for CKEditor 5. Read more about the <a href="https://ckeditor.com/docs/ckeditor5/latest/installation/getting-started/predefined-builds.html#classic-editor"><strong>classic editor build</strong></a> and see the <a href="https://ckeditor.com/docs/ckeditor5/latest/examples/builds/classic-editor.html"><strong>demo</strong></a>.</p>
 
 <figure class="image"><img src="https://c.cksource.com/a/1/img/npm/ckeditor5-build-classic.png" alt="CKEditor 5 classic editor build screenshot"></figure>
 
@@ -31,7 +35,7 @@ const initialData =
 <p>See:</p>
 <ul>
 	<li><a href="https://ckeditor.com/docs/ckeditor5/latest/builds/guides/integration/installation.html">Installation</a> for how to install this package and what it contains.</li>
-	<li><a href="https://ckeditor.com/docs/ckeditor5/latest/builds/guides/integration/basic-api.html">Basic API</a> for how to create an editor and interact with it.</li>
+	<li><a href="https://ckeditor.com/docs/ckeditor5/latest/builds/guides/integration/editor-lifecycle.html">Editor lifecycle</a> for how to create an editor and interact with it.</li>
 	<li><a href="https://ckeditor.com/docs/ckeditor5/latest/installation/getting-started/configuration.html">Configuration</a> for how to configure the editor.</li>
 </ul>
 
@@ -79,26 +83,10 @@ ClassicEditor
 		initialData,
 		toolbar: {
 			items: [
-				'heading',
-				'|',
-				'bold',
-				'italic',
-				'bulletedList',
-				'numberedList',
-				'|',
-				'htmlEmbed',
-				'codeBlock',
-				'blockQuote',
-				'link',
-				'uploadImage',
-				'mediaEmbed',
-				'insertTable',
-				'|',
-				'outdent',
-				'indent',
-				'|',
-				'undo',
-				'redo'
+				'undo', 'redo', '|', 'heading',
+				'|', 'bold', 'italic',
+				'|', 'link', 'uploadImage', 'insertTable', 'mediaEmbed', 'htmlEmbed',
+				'|', 'bulletedList', 'numberedList', 'outdent', 'indent'
 			]
 		},
 		ui: {

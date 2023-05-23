@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+ * @license Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -1045,9 +1045,11 @@ describe( 'PictureEditing', () => {
 									'<img src="/assets/sample.png"></img>' +
 								'</picture>' +
 								'<figcaption ' +
+									'aria-label="Caption for the image" ' +
 									'class="ck-editor__editable ck-editor__nested-editable" ' +
 									'contenteditable="true" ' +
-									'data-placeholder="Enter image caption"' +
+									'data-placeholder="Enter image caption" ' +
+									'role="textbox"' +
 								'>' +
 									'Caption' +
 								'</figcaption>' +
@@ -1215,9 +1217,11 @@ describe( 'PictureEditing', () => {
 									'<img src="/assets/sample.png"></img>' +
 								'</picture>' +
 								'<figcaption ' +
+									'aria-label="Caption for the image" ' +
 									'class="ck-editor__editable ck-editor__nested-editable" ' +
 									'contenteditable="true" ' +
-									'data-placeholder="Enter image caption"' +
+									'data-placeholder="Enter image caption" ' +
+									'role="textbox"' +
 								'>' +
 									'Text of the caption' +
 								'</figcaption>' +
@@ -1377,9 +1381,11 @@ describe( 'PictureEditing', () => {
 								'[<figure class="ck-widget image" contenteditable="false">' +
 									'<img src="/assets/sample.png"></img>' +
 									'<figcaption ' +
+										'aria-label="Caption for the image" ' +
 										'class="ck-editor__editable ck-editor__nested-editable" ' +
 										'contenteditable="true" ' +
-										'data-placeholder="Enter image caption"' +
+										'data-placeholder="Enter image caption" ' +
+										'role="textbox"' +
 									'>' +
 										'Caption' +
 									'</figcaption>' +
@@ -1421,9 +1427,11 @@ describe( 'PictureEditing', () => {
 										'<img src="/assets/sample.png"></img>' +
 									'</a>' +
 									'<figcaption ' +
+										'aria-label="Caption for the image" ' +
 										'class="ck-editor__editable ck-editor__nested-editable" ' +
 										'contenteditable="true" ' +
-										'data-placeholder="Enter image caption"' +
+										'data-placeholder="Enter image caption" ' +
+										'role="textbox"' +
 									'>' +
 										'Text of the caption' +
 									'</figcaption>' +
@@ -1461,9 +1469,11 @@ describe( 'PictureEditing', () => {
 								'[<figure class="ck-widget image image_resized" contenteditable="false" style="width:123px">' +
 									'<img src="/assets/sample.png"></img>' +
 									'<figcaption ' +
+										'aria-label="Caption for the image" ' +
 										'class="ck-editor__editable ck-editor__nested-editable" ' +
 										'contenteditable="true" ' +
-										'data-placeholder="Enter image caption"' +
+										'data-placeholder="Enter image caption" ' +
+										'role="textbox"' +
 									'>' +
 										'Text of the caption' +
 									'</figcaption>' +

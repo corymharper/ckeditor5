@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+ * @license Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -136,7 +136,19 @@ describe( 'ListPropertiesUI', () => {
 			beforeEach( () => {
 				bulletedListCommand = editor.commands.get( 'bulletedList' );
 				bulletedListDropdown = editor.ui.componentFactory.create( 'bulletedList' );
+
+				bulletedListDropdown.render();
+				document.body.appendChild( bulletedListDropdown.element );
+
+				// Trigger lazy init.
+				bulletedListDropdown.isOpen = true;
+				bulletedListDropdown.isOpen = false;
+
 				listPropertiesView = bulletedListDropdown.panelView.children.first;
+			} );
+
+			afterEach( () => {
+				bulletedListDropdown.element.remove();
 			} );
 
 			it( 'should registered as "bulletedList" in the component factory', () => {
@@ -250,6 +262,9 @@ describe( 'ListPropertiesUI', () => {
 
 						const componentFactory = editor.ui.componentFactory;
 						const bulletedListDropdown = componentFactory.create( 'bulletedList' );
+
+						bulletedListDropdown.isOpen = true;
+
 						const listPropertiesView = bulletedListDropdown.panelView.children.first;
 						const stylesView = listPropertiesView.stylesView;
 
@@ -265,6 +280,15 @@ describe( 'ListPropertiesUI', () => {
 					bulletedListDropdown.on( 'execute', spy );
 					listPropertiesView.fire( 'execute' );
 
+					sinon.assert.calledOnce( spy );
+				} );
+
+				it( 'on dropdown open should focus the first active button', () => {
+					const button = stylesView.children.get( 1 );
+					const spy = sinon.spy( button, 'focus' );
+
+					button.isOn = true;
+					bulletedListDropdown.isOpen = true;
 					sinon.assert.calledOnce( spy );
 				} );
 
@@ -362,7 +386,19 @@ describe( 'ListPropertiesUI', () => {
 			beforeEach( () => {
 				numberedListCommand = editor.commands.get( 'numberedList' );
 				numberedListDropdown = editor.ui.componentFactory.create( 'numberedList' );
+
+				numberedListDropdown.render();
+				document.body.appendChild( numberedListDropdown.element );
+
+				// Trigger lazy init.
+				numberedListDropdown.isOpen = true;
+				numberedListDropdown.isOpen = false;
+
 				listPropertiesView = numberedListDropdown.panelView.children.first;
+			} );
+
+			afterEach( () => {
+				numberedListDropdown.element.remove();
 			} );
 
 			it( 'should have #isEnabled bound to the "numberedList" command state', () => {
@@ -387,11 +423,21 @@ describe( 'ListPropertiesUI', () => {
 						reversed: true
 					}, editor => {
 						const numberedListDropdown = editor.ui.componentFactory.create( 'numberedList' );
+
+						numberedListDropdown.render();
+						document.body.appendChild( numberedListDropdown.element );
+
+						// Trigger lazy init.
+						numberedListDropdown.isOpen = true;
+						numberedListDropdown.isOpen = false;
+
 						const listPropertiesView = numberedListDropdown.panelView.children.first;
 
 						expect( listPropertiesView.stylesView ).to.be.instanceOf( View );
 						expect( listPropertiesView.startIndexFieldView ).to.be.instanceOf( LabeledFieldView );
 						expect( listPropertiesView.reversedSwitchButtonView ).to.be.instanceOf( SwitchButtonView );
+
+						numberedListDropdown.element.remove();
 					} );
 				} );
 
@@ -402,11 +448,21 @@ describe( 'ListPropertiesUI', () => {
 						reversed: false
 					}, editor => {
 						const numberedListDropdown = editor.ui.componentFactory.create( 'numberedList' );
+
+						numberedListDropdown.render();
+						document.body.appendChild( numberedListDropdown.element );
+
+						// Trigger lazy init.
+						numberedListDropdown.isOpen = true;
+						numberedListDropdown.isOpen = false;
+
 						const listPropertiesView = numberedListDropdown.panelView.children.first;
 
 						expect( listPropertiesView.stylesView ).to.be.instanceOf( View );
 						expect( listPropertiesView.startIndexFieldView ).to.be.null;
 						expect( listPropertiesView.reversedSwitchButtonView ).to.be.null;
+
+						numberedListDropdown.element.remove();
 					} );
 				} );
 
@@ -417,11 +473,50 @@ describe( 'ListPropertiesUI', () => {
 						reversed: true
 					}, editor => {
 						const numberedListDropdown = editor.ui.componentFactory.create( 'numberedList' );
+
+						numberedListDropdown.render();
+						document.body.appendChild( numberedListDropdown.element );
+
+						// Trigger lazy init.
+						numberedListDropdown.isOpen = true;
+						numberedListDropdown.isOpen = false;
+
 						const listPropertiesView = numberedListDropdown.panelView.children.first;
 
 						expect( listPropertiesView.stylesView ).to.be.null;
 						expect( listPropertiesView.startIndexFieldView ).to.be.instanceOf( LabeledFieldView );
 						expect( listPropertiesView.reversedSwitchButtonView ).to.be.instanceOf( SwitchButtonView );
+
+						numberedListDropdown.element.remove();
+					} );
+				} );
+
+				it( 'should focus the start index field on open when styles are disabled', () => {
+					return withEditor( {
+						styles: false,
+						startIndex: true,
+						reversed: true
+					}, editor => {
+						const numberedListDropdown = editor.ui.componentFactory.create( 'numberedList' );
+
+						numberedListDropdown.render();
+						document.body.appendChild( numberedListDropdown.element );
+
+						// Trigger lazy init.
+						numberedListDropdown.isOpen = true;
+						numberedListDropdown.isOpen = false;
+
+						const listPropertiesView = numberedListDropdown.panelView.children.first;
+						const startIndexFieldView = listPropertiesView.startIndexFieldView;
+
+						const spy = sinon.spy( startIndexFieldView, 'focus' );
+
+						numberedListDropdown.isOpen = true;
+
+						sinon.assert.calledOnce( spy );
+
+						numberedListDropdown.element.remove();
+						numberedListDropdown.destroy();
 					} );
 				} );
 			} );
@@ -537,6 +632,14 @@ describe( 'ListPropertiesUI', () => {
 
 						const componentFactory = editor.ui.componentFactory;
 						const numberedListDropdown = componentFactory.create( 'numberedList' );
+
+						numberedListDropdown.render();
+						document.body.appendChild( numberedListDropdown.element );
+
+						// Trigger lazy init.
+						numberedListDropdown.isOpen = true;
+						numberedListDropdown.isOpen = false;
+
 						const listPropertiesView = numberedListDropdown.panelView.children.first;
 						const stylesView = listPropertiesView.stylesView;
 
@@ -546,6 +649,8 @@ describe( 'ListPropertiesUI', () => {
 							'Toggle the upper–roman list style',
 							'Toggle the upper–latin list style'
 						] );
+
+						numberedListDropdown.element.remove();
 					} );
 				} );
 
@@ -555,6 +660,15 @@ describe( 'ListPropertiesUI', () => {
 					numberedListDropdown.on( 'execute', spy );
 					listPropertiesView.fire( 'execute' );
 
+					sinon.assert.calledOnce( spy );
+				} );
+
+				it( 'on dropdown open should focus the first active button', () => {
+					const button = stylesView.children.get( 1 );
+					const spy = sinon.spy( button, 'focus' );
+
+					button.isOn = true;
+					numberedListDropdown.isOpen = true;
 					sinon.assert.calledOnce( spy );
 				} );
 

@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+ * @license Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -17,6 +17,7 @@ import { getData as getModelData, setData as setModelData } from '@ckeditor/cked
 import { getData as getViewData } from '@ckeditor/ckeditor5-engine/src/dev-utils/view';
 import { getModelDataWithAttributes } from './_utils/utils';
 import { addBackgroundRules } from '@ckeditor/ckeditor5-engine/src/view/styles/background';
+import { getLabel } from '@ckeditor/ckeditor5-widget/src/utils';
 
 import GeneralHtmlSupport from '../src/generalhtmlsupport';
 
@@ -394,6 +395,16 @@ describe( 'DataFilter', () => {
 			expect( consumable.test( model.document.getRoot().getChild( 0 ).getChild( 0 ), 'attribute:htmlAttributes' ) ).to.be.false;
 		} );
 
+		it( 'should add widget label', () => {
+			dataFilter.allowElement( 'input' );
+
+			editor.setData( '<p><input></p>' );
+
+			const element = editor.editing.view.document.getRoot().getChild( 0 ).getChild( 0 );
+
+			expect( getLabel( element ) ).to.equal( 'HTML object' );
+		} );
+
 		function getObjectModelDataWithAttributes( model, options ) {
 			options.excludeAttributes = [ 'htmlContent' ];
 			return getModelDataWithAttributes( model, options );
@@ -602,6 +613,24 @@ describe( 'DataFilter', () => {
 			expect( editor.getData() ).to.equal(
 				'<section data-foo="foo"><p>foo</p></section>' +
 				'<article data-bar="bar"><p>bar</p></article>'
+			);
+		} );
+
+		it( 'should not change order of attributes', () => {
+			dataFilter.allowElement( 'section' );
+			dataFilter.allowAttributes( {
+				name: 'section',
+				attributes: true
+			} );
+
+			editor.setData( '<section data-foo="a" data-bar="b"><p>foobar</p></section>' );
+
+			expect( getModelData( model, { withoutSelection: true } ) ).to.deep.equal(
+				'<htmlSection htmlAttributes="{"attributes":{"data-foo":"a","data-bar":"b"}}"><paragraph>foobar</paragraph></htmlSection>'
+			);
+
+			expect( editor.getData() ).to.equal(
+				'<section data-foo="a" data-bar="b"><p>foobar</p></section>'
 			);
 		} );
 
@@ -845,7 +874,41 @@ describe( 'DataFilter', () => {
 			// At this point we will be trying to register converter without valid view name.
 			expect( () => {
 				dataFilter.allowElement( 'bar' );
+
+				// Apply filtering rules added after initial data load.
+				editor.setData( '' );
 			} ).to.not.throw();
+		} );
+
+		it( 'should not allow invalid attributes', () => {
+			dataFilter.allowElement( 'p' );
+			dataFilter.allowAttributes( {
+				name: 'p',
+				attributes: true
+			} );
+
+			editor.setData( '<p zzz="a" ab?cd="2">x</p><p foo="a" bar' );
+
+			expect( getModelDataWithAttributes( model, { withoutSelection: true } ) ).to.deep.equal( {
+				data: '<paragraph htmlAttributes="(1)">x</paragraph><paragraph htmlAttributes="(2)"></paragraph>',
+				attributes: {
+					1: {
+						attributes: {
+							zzz: 'a'
+						}
+					},
+					2: {
+						attributes: {
+							body: '',
+							foo: 'a'
+						}
+					}
+				}
+			} );
+
+			expect( editor.getData() ).to.equal(
+				'<p zzz="a">x</p><p foo="a" body="">&nbsp;</p>'
+			);
 		} );
 	} );
 
@@ -1207,6 +1270,9 @@ describe( 'DataFilter', () => {
 
 				dataFilter.allowElement( 'xyz' );
 
+				// Apply filtering rules added after initial data load.
+				editor.setData( '' );
+
 				expect( editor.model.schema.getAttributeProperties( 'htmlXyz' ) ).to.deep.equal( { copyOnEnter: true } );
 			} );
 
@@ -1217,6 +1283,9 @@ describe( 'DataFilter', () => {
 				} );
 
 				dataFilter.allowElement( 'xyz' );
+
+				// Apply filtering rules added after initial data load.
+				editor.setData( '' );
 
 				expect( editor.model.schema.getAttributeProperties( 'htmlXyz' ) ).to.deep.equal( {} );
 			} );
@@ -1235,6 +1304,22 @@ describe( 'DataFilter', () => {
 				attributeProperties: {
 					copyOnEnter: true
 				}
+			} );
+
+			dataFilter.allowElement( 'xyz' );
+
+			editor.setData( '<p><xyz>foobar</xyz></p>' );
+
+			expect( getModelData( model, { withoutSelection: true } ) ).to.equal( '<paragraph>foobar</paragraph>' );
+
+			editor.getData( '<p>foobar</p>' );
+		} );
+
+		it( 'should not register default converters for appliesToBlock', () => {
+			dataSchema.registerInlineElement( {
+				view: 'xyz',
+				model: 'htmlXyz',
+				appliesToBlock: true
 			} );
 
 			dataFilter.allowElement( 'xyz' );
@@ -1765,7 +1850,7 @@ describe( 'DataFilter', () => {
 				} );
 
 				expect( editor.getData() ).to.equal(
-					'<p><input data-bar="bar" data-foo="baz"></p>'
+					'<p><input data-foo="baz" data-bar="bar"></p>'
 				);
 			} );
 
@@ -2346,7 +2431,7 @@ describe( 'DataFilter', () => {
 				} );
 
 				expect( editor.getData() ).to.equal(
-					'<section data-bar="baz bar" data-foo="bar baz"><p>foobar</p></section>'
+					'<section data-foo="bar baz" data-bar="baz bar"><p>foobar</p></section>'
 				);
 			} );
 
@@ -2502,6 +2587,9 @@ describe( 'DataFilter', () => {
 				dataFilter.allowAttributes( { name: 'cite', styles: true } );
 				dataFilter.allowAttributes( { name: 'cite', classes: true } );
 				dataFilter.allowAttributes( { name: 'cite', attributes: true } );
+
+				// Apply filtering rules added after initial data load.
+				editor.setData( '' );
 			} );
 
 			it( 'should add new styles if no attribute element is present', () => {
@@ -3241,6 +3329,46 @@ describe( 'DataFilter', () => {
 				);
 			} );
 
+			it( 'should not add classes if selectable is null', () => {
+				setModelData( model, '<paragraph>[foobar]</paragraph>' );
+
+				htmlSupport.addModelHtmlClass( 'cite', [ 'foo', 'bar' ], null );
+
+				expect( getModelDataWithAttributes( model, { withoutSelection: true } ) ).to.deep.equal( {
+					data: '<paragraph>foobar</paragraph>',
+					attributes: {}
+				} );
+
+				expect( editor.getData() ).to.equal(
+					'<p>foobar</p>'
+				);
+			} );
+
+			it( 'should not remove classes if selectable is null', () => {
+				editor.setData(
+					'<p><cite class="foo bar">foobar</cite></p>'
+				);
+
+				model.change( writer => {
+					writer.setSelection( model.document.getRoot().getChild( 0 ), 'in' );
+				} );
+
+				htmlSupport.removeModelHtmlClass( 'cite', [ 'foo', 'bar' ], null );
+
+				expect( getModelDataWithAttributes( model, { withoutSelection: true } ) ).to.deep.equal( {
+					data: '<paragraph><$text htmlCite="(1)">foobar</$text></paragraph>',
+					attributes: {
+						1: {
+							classes: [ 'foo', 'bar' ]
+						}
+					}
+				} );
+
+				expect( editor.getData() ).to.equal(
+					'<p><cite class="foo bar">foobar</cite></p>'
+				);
+			} );
+
 			describe( 'on ranges', () => {
 				beforeEach( () => {
 					root = model.document.getRoot();
@@ -3251,7 +3379,7 @@ describe( 'DataFilter', () => {
 					dataFilter.allowAttributes( { name: 'cite', attributes: true } );
 				} );
 
-				it( 'should add new classes', () => {
+				it( 'should add new classes (single range)', () => {
 					editor.setData( '<p>foobar</p>' );
 
 					htmlSupport.addModelHtmlClass( 'cite', [ 'foo', 'bar' ], model.createRange(
@@ -3273,7 +3401,7 @@ describe( 'DataFilter', () => {
 					);
 				} );
 
-				it( 'should remove classes', () => {
+				it( 'should remove classes (single range)', () => {
 					editor.setData( '<p><cite class="foo">foobar</cite></p>' );
 
 					htmlSupport.removeModelHtmlClass( 'cite', 'foo', model.createRange(
@@ -3292,6 +3420,65 @@ describe( 'DataFilter', () => {
 
 					expect( editor.getData() ).to.equal(
 						'<p><cite class="foo">f</cite>oobar</p>'
+					);
+				} );
+
+				it( 'should add new classes (array of ranges)', () => {
+					editor.setData( '<p>foobar</p>' );
+
+					htmlSupport.addModelHtmlClass( 'cite', [ 'foo', 'bar' ], [
+						model.createRange(
+							model.createPositionAt( root.getChild( 0 ), 1 ),
+							model.createPositionAt( root.getChild( 0 ), 2 )
+						),
+						model.createRange(
+							model.createPositionAt( root.getChild( 0 ), 3 ),
+							model.createPositionAt( root.getChild( 0 ), 4 )
+						)
+					] );
+
+					expect( getModelDataWithAttributes( model, { withoutSelection: true } ) ).to.deep.equal( {
+						data: '<paragraph>f<$text htmlCite="(1)">o</$text>o<$text htmlCite="(2)">b</$text>ar</paragraph>',
+						attributes: {
+							1: {
+								classes: [ 'foo', 'bar' ]
+							},
+							2: {
+								classes: [ 'foo', 'bar' ]
+							}
+						}
+					} );
+
+					expect( editor.getData() ).to.equal(
+						'<p>f<cite class="foo bar">o</cite>o<cite class="foo bar">b</cite>ar</p>'
+					);
+				} );
+
+				it( 'should remove classes (array pf ranges)', () => {
+					editor.setData( '<p><cite class="foo">foobar</cite></p>' );
+
+					htmlSupport.removeModelHtmlClass( 'cite', 'foo', [
+						model.createRange(
+							model.createPositionAt( root.getChild( 0 ), 0 ),
+							model.createPositionAt( root.getChild( 0 ), 2 )
+						),
+						model.createRange(
+							model.createPositionAt( root.getChild( 0 ), 3 ),
+							model.createPositionAt( root.getChild( 0 ), 6 )
+						)
+					] );
+
+					expect( getModelDataWithAttributes( model, { withoutSelection: true } ) ).to.deep.equal( {
+						data: '<paragraph>fo<$text htmlCite="(1)">o</$text>bar</paragraph>',
+						attributes: {
+							1: {
+								classes: [ 'foo' ]
+							}
+						}
+					} );
+
+					expect( editor.getData() ).to.equal(
+						'<p>fo<cite class="foo">o</cite>bar</p>'
 					);
 				} );
 			} );
@@ -3511,6 +3698,9 @@ describe( 'DataFilter', () => {
 
 		expectToThrowCKEditorError( () => {
 			dataFilter.allowElement( 'xyz' );
+
+			// Apply filtering rules added after initial data load.
+			editor.setData( '' );
 		}, /data-filter-invalid-definition/, null, definition );
 	} );
 
@@ -3637,7 +3827,7 @@ describe( 'DataFilter', () => {
 	} );
 
 	describe( 'loadAllowedConfig', () => {
-		it( 'should allow match all elements by ommiting pattern name', () => {
+		it( 'should allow match all elements by omitting pattern name', () => {
 			dataSchema.registerBlockElement( {
 				model: 'htmlXyz',
 				view: 'xyz',
@@ -4205,6 +4395,50 @@ describe( 'DataFilter', () => {
 			);
 		} );
 
+		it( 'should match attributes on any element', () => {
+			// First, allow all the elements matching config.
+			dataFilter.loadAllowedConfig( [
+				{
+					name: /.*/,
+					attributes: true
+				}
+			] );
+
+			// Then, disallow and verify it's actually working.
+			dataFilter.loadDisallowedConfig( [
+				{
+					attributes: [ { key: /^data-foo.*$/, value: true } ]
+				}
+			] );
+
+			editor.setData(
+				'<p>' +
+					'<span data-foo="foo data">aaa</span>' +
+					'<span data-bar="bar data">bbb</span>' +
+				'</p>'
+			);
+
+			// Font feature should take over color CSS property.
+			expect( getModelDataWithAttributes( model, { withoutSelection: true } ) ).to.deep.equal( {
+				data: '<paragraph><$text htmlSpan="(1)">aaa</$text><$text htmlSpan="(2)">bbb</$text></paragraph>',
+				attributes: {
+					1: {},
+					2: {
+						attributes: {
+							'data-bar': 'bar data'
+						}
+					}
+				}
+			} );
+
+			expect( editor.getData() ).to.equal(
+				'<p>' +
+					'<span>aaa</span>' +
+					'<span data-bar="bar data">bbb</span>' +
+				'</p>'
+			);
+		} );
+
 		it( 'should match classes', () => {
 			const allowedConfig = [
 				{
@@ -4321,6 +4555,112 @@ describe( 'DataFilter', () => {
 					'<span data-foo="foo data">bbb</span>' +
 					'<span data-bar="bar data">ccc</span>' +
 				'</p>'
+			);
+		} );
+
+		it( 'should match disallowed block element', () => {
+			// First, allow all the elements matching config.
+			dataFilter.loadAllowedConfig( [
+				{
+					name: /.*/,
+					styles: true,
+					classes: true,
+					attributes: true
+				}
+			] );
+
+			// Then, disallow and verify it's actually working.
+			dataFilter.loadDisallowedConfig( [
+				{
+					name: 'div'
+				}
+			] );
+
+			editor.setData(
+				'<p>foo</p>' +
+				'<div>bar</div>' +
+				'<p>baz</p>'
+			);
+
+			// Font feature should take over color CSS property.
+			expect( getModelDataWithAttributes( model, { withoutSelection: true } ) ).to.deep.equal( {
+				data:
+					'<paragraph>foo</paragraph>' +
+					'<paragraph>bar</paragraph>' +
+					'<paragraph>baz</paragraph>',
+				attributes: {}
+			} );
+
+			expect( editor.getData() ).to.equal(
+				'<p>foo</p>' +
+				'<p>bar</p>' +
+				'<p>baz</p>'
+			);
+		} );
+
+		it( 'should match disallowed inline element', () => {
+			// First, allow all the elements matching config.
+			dataFilter.loadAllowedConfig( [
+				{
+					name: /.*/,
+					styles: true,
+					classes: true,
+					attributes: true
+				}
+			] );
+
+			// Then, disallow and verify it's actually working.
+			dataFilter.loadDisallowedConfig( [
+				{
+					name: 'abbr'
+				}
+			] );
+
+			editor.setData(
+				'<p>foo <abbr>bar</abbr> baz</p>'
+			);
+
+			// Font feature should take over color CSS property.
+			expect( getModelDataWithAttributes( model, { withoutSelection: true } ) ).to.deep.equal( {
+				data: '<paragraph>foo bar baz</paragraph>',
+				attributes: {}
+			} );
+
+			expect( editor.getData() ).to.equal(
+				'<p>foo bar baz</p>'
+			);
+		} );
+
+		it( 'should match disallowed object element', () => {
+			// First, allow all the elements matching config.
+			dataFilter.loadAllowedConfig( [
+				{
+					name: /.*/,
+					styles: true,
+					classes: true,
+					attributes: true
+				}
+			] );
+
+			// Then, disallow and verify it's actually working.
+			dataFilter.loadDisallowedConfig( [
+				{
+					name: 'button'
+				}
+			] );
+
+			editor.setData(
+				'<p>foo <button>bar</button> baz</p>'
+			);
+
+			// Font feature should take over color CSS property.
+			expect( getModelDataWithAttributes( model, { withoutSelection: true } ) ).to.deep.equal( {
+				data: '<paragraph>foo bar baz</paragraph>',
+				attributes: {}
+			} );
+
+			expect( editor.getData() ).to.equal(
+				'<p>foo bar baz</p>'
 			);
 		} );
 	} );

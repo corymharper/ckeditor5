@@ -4,7 +4,7 @@ order: 10
 ---
 # Using two different editors
 
-The ability to use two or more types of rich text editors on one page is a common requirement. For instance, you may want to use the {@link installation/advanced/predefined-builds#classic-editor classic editor} next to a couple of {@link installation/advanced/predefined-builds#inline-editor inline editors}.
+The ability to use two or more types of rich text editors on one page is a common requirement. For instance, you may want to use the {@link installation/getting-started/predefined-builds#classic-editor classic editor} next to a couple of {@link installation/getting-started/predefined-builds#inline-editor inline editors}.
 
 **Do not load two builds on one page.** This is a mistake which leads to:
 
@@ -16,14 +16,14 @@ The ability to use two or more types of rich text editors on one page is a commo
 
 If you want to load two different editors on one page you need to make sure that they are built together (once). This can be achieved in at least two ways:
 
-* {@link installation/advanced/integrating-from-source Integrating CKEditor 5 from source} directly into your application. Since you build you application once, the editors that you use will be built together, too.
+* {@link installation/advanced/integrating-from-source-webpack Integrating CKEditor 5 from source} directly into your application. Since you build you application once, the editors that you use will be built together, too.
 * [Creating a "super build" of CKEditor 5](#creating-super-builds). Instead of creating a build which exports just one editor, you can create a build which exports two or more at the same time.
 
 ## Creating "super builds"
 
 There is no limit for how many editor classes a single build can export. By default, the official builds export a single editor class only. However, they can easily import more.
 
-You can start from forking (or copying) an existing build like in the {@link installation/getting-started/quick-start#building-the-editor-from-source "Creating custom builds"} guide. Let's say you forked and cloned the [`ckeditor5`](http://github.com/ckeditor/ckeditor5) repository and want to add {@link module:editor-inline/inlineeditor~InlineEditor} to the classic build:
+You can start from forking (or copying) an existing build like in the {@link installation/getting-started/quick-start-other#building-the-editor-from-source "Creating custom builds"} guide. Let's say you forked and cloned the [`ckeditor5`](http://github.com/ckeditor/ckeditor5) repository and want to add {@link module:editor-inline/inlineeditor~InlineEditor} to the classic build:
 
 ```bash
 git clone -b stable git@github.com:<your-username>/ckeditor5.git
@@ -41,7 +41,7 @@ Once all the dependencies are installed, modify the webpack's entry point which 
 
 ```js
 // The editor creator to use.
-import ClassicEditorBase from '@ckeditor/ckeditor5-editor-classic/src/classiceditor';
+import { ClassicEditor as ClassicEditorBase } from '@ckeditor/ckeditor5-editor-classic';
 
 // ...
 
@@ -62,8 +62,8 @@ Let's make it export an object with two classes: `ClassicEditor` and `InlineEdit
 
 ```js
 // The editor creators to use.
-import ClassicEditorBase from '@ckeditor/ckeditor5-editor-classic/src/classiceditor';
-import InlineEditorBase from '@ckeditor/ckeditor5-editor-inline/src/inlineeditor';
+import { ClassicEditor as ClassicEditorBase } from '@ckeditor/ckeditor5-editor-classic';
+import { InlineEditor as InlineEditorBase } from '@ckeditor/ckeditor5-editor-inline';
 
 // ...
 
@@ -137,13 +137,13 @@ Finally, when webpack finishes compiling your super build, you can change the `s
 <div id="classic-editor">
 	<h2>Sample</h2>
 
-	<p>This is an instance of the <a href="https://ckeditor.com/docs/ckeditor5/latest/installation/advanced/alternative-setups/predefined-builds.html#classic-editor">classic editor build</a>.</p>
+	<p>This is an instance of the <a href="https://ckeditor.com/docs/ckeditor5/latest/installation/getting-started/predefined-builds.html#classic-editor">classic editor build</a>.</p>
 </div>
 
 <div id="inline-editor">
 	<h2>Sample</h2>
 
-	<p>This is an instance of the <a href="https://ckeditor.com/docs/ckeditor5/latest/installation/advanced/alternative-setups/predefined-builds.html#inline-editor">inline editor build</a>.</p>
+	<p>This is an instance of the <a href="https://ckeditor.com/docs/ckeditor5/latest/installation/getting-started/predefined-builds.html#inline-editor">inline editor build</a>.</p>
 </div>
 
 <script src="../build/ckeditor.js"></script>

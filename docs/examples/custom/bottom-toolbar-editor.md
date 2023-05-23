@@ -1,21 +1,19 @@
 ---
 category: examples-builds-custom
-order: 30
+order: 70
 classes: main__content--no-toc
 toc: false
-menu-title: Bottom toolbar with formatting options grouped
+menu-title: Bottom toolbar with button grouping
 modified_at: 2021-12-09
 ---
 
 # Editor with bottom toolbar and button grouping
 
-The following custom editor example showcases an editor instance with the main toolbar displayed at the bottom of the editing window. To make it possible, the {@link module:editor-decoupled/decouplededitor~DecoupledEditor `DecoupledEditor`} was used with the {@link module:editor-decoupled/decouplededitoruiview~DecoupledEditorUIView#toolbar main toolbar} injected after the editing root into the DOM. Learn more about the {@link framework/guides/document-editor decoupled UI in CKEditor 5} to find out the details of this process.
+The following custom editor example showcases an editor instance with the main toolbar displayed at the bottom of the editing window. To make it possible, the {@link module:editor-decoupled/decouplededitor~DecoupledEditor `DecoupledEditor`} was used with the {@link module:editor-decoupled/decouplededitoruiview~DecoupledEditorUIView#toolbar main toolbar} injected after the editing root into the DOM. Learn more about the {@link framework/document-editor decoupled UI in CKEditor 5} to find out the details of this process.
 
-Additionally, thanks to the flexibility offered by the {@link framework/guides/architecture/ui-library CKEditor 5 UI framework}, the main toolbar has been uncluttered by moving buttons related to text formatting into the custom "Formatting options" dropdown. All remaining dropdown and (button) tooltips have been tuned to open upward for the best user experience.
+Additionally, thanks to the flexibility offered by the {@link framework/architecture/ui-library CKEditor 5 UI framework}, the main toolbar has been uncluttered by moving buttons related to text formatting into the custom "Formatting options" dropdown. All remaining dropdown and (button) tooltips have been tuned to open upward for the best user experience. Similar effect can also be achieved by using the {@link features/toolbar#grouping-toolbar-items-in-drop-downs-nested-toolbars built-in toolbar grouping option}.
 
 The presented combination of the UI and editor's features works best for integrations where text creation comes first and formatting is applied occasionally, for example in email applications, (forum) post editors, chats or instant messaging. You can probably recognize this UI setup from some popular applications such as Gmail, Slack or Zendesk.
-
-## Demo
 
 {@snippet examples/bottom-toolbar-editor}
 
@@ -27,43 +25,29 @@ The presented combination of the UI and editor's features works best for integra
 ```js
 
 import DecoupledEditor from '@ckeditor/ckeditor5-build-decoupled-document/src/ckeditor';
-import Plugin from '@ckeditor/ckeditor5-core/src/plugin';
+import { Plugin } from '@ckeditor/ckeditor5-core';
 
-import Alignment from '@ckeditor/ckeditor5-alignment/src/alignment';
-import Autoformat from '@ckeditor/ckeditor5-autoformat/src/autoformat';
-import BlockQuote from '@ckeditor/ckeditor5-block-quote/src/blockquote';
-import Bold from '@ckeditor/ckeditor5-basic-styles/src/bold';
-import DropdownButtonView from '@ckeditor/ckeditor5-ui/src/dropdown/button/dropdownbuttonview';
-import DropdownPanelView from '@ckeditor/ckeditor5-ui/src/dropdown/dropdownpanelview';
-import DropdownView from '@ckeditor/ckeditor5-ui/src/dropdown/dropdownview';
-import EasyImage from '@ckeditor/ckeditor5-easy-image/src/easyimage';
-import Essentials from '@ckeditor/ckeditor5-essentials/src/essentials';
-import Font from '@ckeditor/ckeditor5-font/src/font';
-import Heading from '@ckeditor/ckeditor5-heading/src/heading';
-import HorizontalLine from '@ckeditor/ckeditor5-horizontal-line/src/horizontalline';
-import Image from '@ckeditor/ckeditor5-image/src/image';
-import ImageCaption from '@ckeditor/ckeditor5-image/src/imagecaption';
-import ImageStyle from '@ckeditor/ckeditor5-image/src/imagestyle';
-import ImageToolbar from '@ckeditor/ckeditor5-image/src/imagetoolbar';
-import ImageUpload from '@ckeditor/ckeditor5-image/src/imageupload';
-import ImageResize from '@ckeditor/ckeditor5-image/src/imageresize';
-import Indent from '@ckeditor/ckeditor5-indent/src/indent';
-import Italic from '@ckeditor/ckeditor5-basic-styles/src/italic';
-import Link from '@ckeditor/ckeditor5-link/src/link';
-import List from '@ckeditor/ckeditor5-list/src/list';
-import MediaEmbed from '@ckeditor/ckeditor5-media-embed/src/mediaembed';
-import Paragraph from '@ckeditor/ckeditor5-paragraph/src/paragraph';
-import RemoveFormat from '@ckeditor/ckeditor5-remove-format/src/removeformat';
-import Strikethrough from '@ckeditor/ckeditor5-basic-styles/src/strikethrough';
-import Subscript from '@ckeditor/ckeditor5-basic-styles/src/subscript';
-import Superscript from '@ckeditor/ckeditor5-basic-styles/src/superscript';
-import Table from '@ckeditor/ckeditor5-table/src/table';
-import TableToolbar from '@ckeditor/ckeditor5-table/src/tabletoolbar';
-import ToolbarView from '@ckeditor/ckeditor5-ui/src/toolbar/toolbarview';
-import Underline from '@ckeditor/ckeditor5-basic-styles/src/underline';
+import { Alignment } from '@ckeditor/ckeditor5-alignment';
+import { Autoformat } from '@ckeditor/ckeditor5-autoformat';
+import { Bold, Italic, Strikethrough, Subscript, Superscript, Underline } from '@ckeditor/ckeditor5-basic-styles';
+import { BlockQuote } from '@ckeditor/ckeditor5-block-quote';
+import { EasyImage } from '@ckeditor/ckeditor5-easy-image';
+import { Essentials } from '@ckeditor/ckeditor5-essentials';
+import { Font } from '@ckeditor/ckeditor5-font';
+import { Heading } from '@ckeditor/ckeditor5-heading';
+import { HorizontalLine } from '@ckeditor/ckeditor5-horizontal-line';
+import { Image, ImageCaption, ImageResize, ImageStyle, ImageToolbar, ImageUpload } from '@ckeditor/ckeditor5-image';
+import { Indent } from '@ckeditor/ckeditor5-indent';
+import { Link } from '@ckeditor/ckeditor5-link';
+import { List } from '@ckeditor/ckeditor5-list';
+import { MediaEmbed } from '@ckeditor/ckeditor5-media-embed';
+import { Paragraph } from '@ckeditor/ckeditor5-paragraph';
+import { RemoveFormat } from '@ckeditor/ckeditor5-remove-format';
+import { Table, TableToolbar } from '@ckeditor/ckeditor5-table';
+import { DropdownButtonView, DropdownPanelView, DropdownView, ToolbarView } from '@ckeditor/ckeditor5-ui';
 
-import clickOutsideHandler from '@ckeditor/ckeditor5-ui/src/bindings/clickoutsidehandler';
 import fontColorIcon from '@ckeditor/ckeditor5-font/theme/icons/font-color.svg';
+import { clickOutsideHandler } from '@ckeditor/ckeditor5-ui';
 
 class FormattingOptions extends Plugin {
 	/**
@@ -194,6 +178,9 @@ DecoupledEditor
 			FormattingOptions
 		],
 		toolbar: [
+			'undo',
+			'redo',
+			'|',
 			'formattingOptions',
 			'|',
 			'link',
@@ -201,9 +188,14 @@ DecoupledEditor
 			'uploadImage',
 			'insertTable',
 			'mediaEmbed',
-			'horizontalLine'
+			'horizontalLine',
+			'|',
+			{
+				label: 'Lists',
+				icon: false,
+				items: [ 'bulletedList', 'numberedList', '|', 'outdent', 'indent' ]
+			}
 		],
-
 		// Configuration of the formatting dropdown.
 		formattingOptions: [
 			'undo',
@@ -249,13 +241,14 @@ DecoupledEditor
 				'mergeTableCells'
 			]
 		},
-
 		cloudServices: {
-                    // PROVIDE CORRECT VALUES HERE:
-                    tokenUrl: 'https://example.com/cs-token-endpoint',
-                    uploadUrl: 'https://your-organization-id.cke-cs.com/easyimage/upload/',
-                    webSocketUrl: 'your-organization-id.cke-cs.com/ws/'
-                },
+			// This editor configuration includes the Easy Image feature.
+			// Provide correct configuration values to use it.
+			tokenUrl: 'https://example.com/cs-token-endpoint',
+			uploadUrl: 'https://your-organization-id.cke-cs.com/easyimage/upload/'
+			// Read more about Easy Image - https://ckeditor.com/docs/ckeditor5/latest/features/images/image-upload/easy-image.html.
+			// For other image upload methods see the guide - https://ckeditor.com/docs/ckeditor5/latest/features/images/image-upload/image-upload.html.
+		},
 	} )
 	.then( editor => {
 		window.editor = editor;
@@ -394,27 +387,7 @@ function overrideTooltipPositions( toolbarView ) {
 
 <div id="editor">
 	<div id="editor-content">
-		<figure class="image image_resized" style="width: 65px;">
-			<img
-				src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHhtbG5zOnhsaW5rPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5L3hsaW5rIiB2aWV3Qm94PSIwIDAgNjIgNjIiPgogIDxkZWZzPgogICAgPHBvbHlnb24gaWQ9ImEiIHBvaW50cz0iMTUgNTIgMTUgNDYuOTUxOTIzMSAxOS40MTMyODczIDQ2LjA4NjUzODUgMTkuNDEzMjg3MyAxNS45NDIzMDc3IDE1IDE1LjA3NjkyMzEgMTUgMTAgNDggMTAgNDggMjEuNTA5NjE1NCA0MS42MjIwODggMjEuNTA5NjE1NCA0MS4yNTE5NDEzIDE2LjQ5MDM4NDYgMjcuNzI3MzUxMiAxNi40OTAzODQ2IDI3LjcyNzM1MTIgMjguMDU3NjkyMyA0Mi4yNDg0OTAxIDI4LjA1NzY5MjMgNDIuMjQ4NDkwMSAzNC41NDgwNzY5IDI3LjcyNzM1MTIgMzQuNTQ4MDc2OSAyNy43MjczNTEyIDQ2LjA4NjUzODUgMzIuMTY5MTExMyA0Ni45NTE5MjMxIDMyLjE2OTExMTMgNTIiLz4KICA8L2RlZnM+CiAgPGcgZmlsbD0ibm9uZSIgZmlsbC1ydWxlPSJldmVub2RkIj4KICAgIDxyZWN0IGZpbGw9IiMxOTE3MTciIHdpZHRoPSI2MiIgaGVpZ2h0PSI2MiIgcng9IjMiLz4KICAgIDx1c2UgZmlsbD0iI0ZGRiIgZmlsbC1ydWxlPSJub256ZXJvIiB4bGluazpocmVmPSIjYSIvPgogIDwvZz4KPC9zdmc+Cg=="
-				alt="Fabulous Dummy App logo"
-			/>
-		</figure>
-		<h2 style="text-align: center;">Welcome to Fabulous Dummy App!</h2>
-		<hr />
-		<p>We are so glad to have you, <strong>{user_name}</strong>! But before you can explore all the features, please verify your email address.</p>
-		<p>We use your email address to validate your account and to keep you updated. We respect your privacy and you can opt out of direct email marketing in your account <a href="https://fabulousdummyapp.com/preferences">preferences</a>.</p>
-		<p>If you did not create an account using this email address, please contact us at <a href="mailto:contact@fabulousdummyapp.com">contact@fabulousdummyapp.com</a>.</p>
-		<p style="text-align: center;">
-			<a href="https://fabulousdummyapp.com/verify">
-				<span class="text-big"><strong>Verify your account</strong></span>
-			</a>
-		</p>
-		<hr />
-		<p>
-			<a href="https://fabulousdummyapp.com/"><span class="text-small" style="color: hsl(0, 0%, 60%);"><strong>Fabulous Dummy App</strong></span></a><br /><span class="text-small" style="color: hsl(0, 0%, 60%);">One app that will do <i>anything</i> you want.</span>
-		</p>
-		<p><span class="text-small" style="color: hsl(0, 0%, 60%);">2776 Black Oak Hollow Road, San Jose, CA</span></p>
+			Editor content is inserted here.
 	</div>
 	<div id="editor-toolbar-container"></div>
 </div>

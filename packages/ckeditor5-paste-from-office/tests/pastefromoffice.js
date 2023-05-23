@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+ * @license Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -68,6 +68,20 @@ describe( 'PasteFromOffice', () => {
 				checkCorrectData( '<p id="docs-internal-guid-12345678-1234-1234-1234-1234567890ab"></p>' );
 			} );
 
+			it( 'should process data from google sheets', () => {
+				checkCorrectData(
+					'<google-sheets-html-origin>' +
+						'<table>' +
+							'<tbody>' +
+								'<tr>' +
+									'<td>123</td>' +
+								'</tr>' +
+							'</tbody>' +
+						'</table>' +
+					'<google-sheets-html-origin>'
+				);
+			} );
+
 			function checkCorrectData( inputString ) {
 				const data = setUpData( inputString );
 				const getDataSpy = sinon.spy( data.dataTransfer, 'getData' );
@@ -92,6 +106,18 @@ describe( 'PasteFromOffice', () => {
 
 			it( 'should process data with similar headers to MS Word', () => {
 				checkNotProcessedData( '<meta name=Generator content="Other">' );
+			} );
+
+			it( 'should not process regular tables', () => {
+				checkNotProcessedData(
+					'<table>' +
+						'<tbody>' +
+							'<tr>' +
+								'<td>123</td>' +
+							'</tr>' +
+						'</tbody>' +
+					'</table>'
+				);
 			} );
 
 			it( 'should process data for codeBlock', () => {

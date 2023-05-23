@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+ * @license Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -627,10 +627,8 @@ describe( 'DocumentListEditing - converters', () => {
 				} );
 
 				expect( getViewData( editor.editing.view, { withoutSelection: true } ) ).to.equal(
-					'<ul>' +
-						'<li><span class="ck-list-bogus-paragraph">a</span></li>' +
-						'<li><span class="ck-list-bogus-paragraph">b</span></li>' +
-					'</ul>'
+					'<span class="ck-list-bogus-paragraph">a</span>' +
+					'<span class="ck-list-bogus-paragraph">b</span>'
 				);
 			} );
 

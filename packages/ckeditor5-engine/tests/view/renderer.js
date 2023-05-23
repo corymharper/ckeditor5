@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+ * @license Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -435,12 +435,12 @@ describe( 'Renderer', () => {
 			expect( domRoot.childNodes.length ).to.equal( 1 );
 
 			const domDivOuter = domRoot.childNodes[ 0 ];
-			expect( renderer.domConverter.viewToDom( viewDivOuter, domRoot.document ) ).to.equal( domDivOuter );
+			expect( renderer.domConverter.viewToDom( viewDivOuter ) ).to.equal( domDivOuter );
 			expect( domDivOuter.tagName ).to.equal( 'DIV' );
 			expect( domDivOuter.childNodes.length ).to.equal( 1 );
 
 			const domDivInner = domDivOuter.childNodes[ 0 ];
-			expect( renderer.domConverter.viewToDom( viewDivInner, domRoot.document ) ).to.equal( domDivInner );
+			expect( renderer.domConverter.viewToDom( viewDivInner ) ).to.equal( domDivInner );
 			expect( domDivInner.tagName ).to.equal( 'DIV' );
 			expect( domDivInner.childNodes.length ).to.equal( 0 );
 		} );
@@ -638,6 +638,58 @@ describe( 'Renderer', () => {
 			renderAndExpectNoChanges( renderer, domRoot );
 		} );
 
+		it( 'should not add inline filler in case <p>[]<b>foo</b></p> on Android', () => {
+			testUtils.sinon.stub( env, 'isAndroid' ).value( true );
+
+			const domSelection = document.getSelection();
+
+			// Step 1: <p>"FILLER{}"<b>foo</b></p>
+			const { view: viewP, selection: newSelection } = parse(
+				'<container:p>[]<attribute:b>foo</attribute:b></container:p>' );
+
+			viewRoot._appendChild( viewP );
+			selection._setTo( newSelection );
+
+			renderer.markToSync( 'children', viewRoot );
+			renderer.render();
+
+			const domP = domRoot.childNodes[ 0 ];
+
+			expect( domP.childNodes.length ).to.equal( 1 );
+			expect( domP.childNodes[ 0 ].tagName.toLowerCase() ).to.equal( 'b' );
+			expect( domP.childNodes[ 0 ].childNodes.length ).to.equal( 1 );
+			expect( domP.childNodes[ 0 ].childNodes[ 0 ].data ).to.equal( 'foo' );
+
+			expect( domSelection.rangeCount ).to.equal( 1 );
+			expect( domSelection.getRangeAt( 0 ).startContainer ).to.equal( domP );
+			expect( domSelection.getRangeAt( 0 ).startOffset ).to.equal( 0 );
+			expect( domSelection.getRangeAt( 0 ).collapsed ).to.be.true;
+
+			// Step 2: No mutation on second render
+			renderer.markToSync( 'children', viewP );
+			renderAndExpectNoChanges( renderer, domRoot );
+
+			// Step 3: <p><b>{}foo</b></p>
+			selection._setTo( ViewRange._createFromParentsAndOffsets(
+				viewP.getChild( 0 ).getChild( 0 ), 0, viewP.getChild( 0 ).getChild( 0 ), 0 ) );
+
+			renderer.render();
+
+			expect( domP.childNodes.length ).to.equal( 1 );
+			expect( domP.childNodes[ 0 ].tagName.toLowerCase() ).to.equal( 'b' );
+			expect( domP.childNodes[ 0 ].childNodes.length ).to.equal( 1 );
+			expect( domP.childNodes[ 0 ].childNodes[ 0 ].data ).to.equal( 'foo' );
+
+			expect( domSelection.rangeCount ).to.equal( 1 );
+			expect( domSelection.getRangeAt( 0 ).startContainer ).to.equal( domP.childNodes[ 0 ].childNodes[ 0 ] );
+			expect( domSelection.getRangeAt( 0 ).startOffset ).to.equal( 0 );
+			expect( domSelection.getRangeAt( 0 ).collapsed ).to.be.true;
+
+			// Step 4: No mutation on second render
+			renderer.markToSync( 'children', viewP );
+			renderAndExpectNoChanges( renderer, domRoot );
+		} );
+
 		it( 'should add and remove inline filler in case <p><b>foo</b>[]</p>', () => {
 			const domSelection = document.getSelection();
 
@@ -662,6 +714,58 @@ describe( 'Renderer', () => {
 			expect( domSelection.rangeCount ).to.equal( 1 );
 			expect( domSelection.getRangeAt( 0 ).startContainer ).to.equal( domP.childNodes[ 1 ] );
 			expect( domSelection.getRangeAt( 0 ).startOffset ).to.equal( INLINE_FILLER_LENGTH );
+			expect( domSelection.getRangeAt( 0 ).collapsed ).to.be.true;
+
+			// Step 2: No mutation on second render
+			renderer.markToSync( 'children', viewP );
+			renderAndExpectNoChanges( renderer, domRoot );
+
+			// Step 3: <p><b>foo{}</b></p>
+			selection._setTo( ViewRange._createFromParentsAndOffsets(
+				viewP.getChild( 0 ).getChild( 0 ), 3, viewP.getChild( 0 ).getChild( 0 ), 3 ) );
+
+			renderer.render();
+
+			expect( domP.childNodes.length ).to.equal( 1 );
+			expect( domP.childNodes[ 0 ].tagName.toLowerCase() ).to.equal( 'b' );
+			expect( domP.childNodes[ 0 ].childNodes.length ).to.equal( 1 );
+			expect( domP.childNodes[ 0 ].childNodes[ 0 ].data ).to.equal( 'foo' );
+
+			expect( domSelection.rangeCount ).to.equal( 1 );
+			expect( domSelection.getRangeAt( 0 ).startContainer ).to.equal( domP.childNodes[ 0 ].childNodes[ 0 ] );
+			expect( domSelection.getRangeAt( 0 ).startOffset ).to.equal( 3 );
+			expect( domSelection.getRangeAt( 0 ).collapsed ).to.be.true;
+
+			// Step 4: No mutation on second render
+			renderer.markToSync( 'children', viewP );
+			renderAndExpectNoChanges( renderer, domRoot );
+		} );
+
+		it( 'should not add inline filler in case <p><b>foo</b>[]</p> on Android', () => {
+			testUtils.sinon.stub( env, 'isAndroid' ).value( true );
+
+			const domSelection = document.getSelection();
+
+			// Step 1: <p>"FILLER{}"<b>foo</b></p>
+			const { view: viewP, selection: newSelection } = parse(
+				'<container:p><attribute:b>foo</attribute:b>[]</container:p>' );
+
+			viewRoot._appendChild( viewP );
+			selection._setTo( newSelection );
+
+			renderer.markToSync( 'children', viewRoot );
+			renderer.render();
+
+			const domP = domRoot.childNodes[ 0 ];
+
+			expect( domP.childNodes.length ).to.equal( 1 );
+			expect( domP.childNodes[ 0 ].tagName.toLowerCase() ).to.equal( 'b' );
+			expect( domP.childNodes[ 0 ].childNodes.length ).to.equal( 1 );
+			expect( domP.childNodes[ 0 ].childNodes[ 0 ].data ).to.equal( 'foo' );
+
+			expect( domSelection.rangeCount ).to.equal( 1 );
+			expect( domSelection.getRangeAt( 0 ).startContainer ).to.equal( domP );
+			expect( domSelection.getRangeAt( 0 ).startOffset ).to.equal( 1 );
 			expect( domSelection.getRangeAt( 0 ).collapsed ).to.be.true;
 
 			// Step 2: No mutation on second render
@@ -3510,7 +3614,7 @@ describe( 'Renderer', () => {
 				renderer.render();
 
 				expect( getMutationStats( observer.takeRecords() ) ).to.deep.equal( [
-					'added: 1, removed: 0'
+					'added: [ <p> ], removed: []'
 				] );
 			} );
 
@@ -3527,7 +3631,7 @@ describe( 'Renderer', () => {
 				renderer.render();
 
 				expect( getMutationStats( observer.takeRecords() ) ).to.deep.equal( [
-					'added: 1, removed: 0'
+					'added: [ <p> ], removed: []'
 				] );
 			} );
 
@@ -3544,7 +3648,7 @@ describe( 'Renderer', () => {
 				renderer.render();
 
 				expect( getMutationStats( observer.takeRecords() ) ).to.deep.equal( [
-					'added: 1, removed: 0'
+					'added: [ <p> ], removed: []'
 				] );
 			} );
 
@@ -3578,8 +3682,138 @@ describe( 'Renderer', () => {
 				renderer.render();
 
 				expect( getMutationStats( observer.takeRecords() ) ).to.deep.equal( [
-					'added: 0, removed: 1',
-					'added: 1, removed: 0'
+					'added: [], removed: [ <p> ]',
+					'added: [ <h1> ], removed: []'
+				] );
+			} );
+
+			it( 'should update existing text node', () => {
+				viewRoot._appendChild( parse( '<container:p>foo</container:p>' ) );
+
+				renderer.markToSync( 'children', viewRoot );
+				renderer.render();
+				cleanObserver( observer );
+
+				viewRoot.getChild( 0 ).getChild( 0 )._textData = 'foobar';
+
+				observer.disconnect();
+				observer.observe( domRoot, {
+					childList: true,
+					attributes: false,
+					characterData: true,
+					characterDataOldValue: true,
+					subtree: true
+				} );
+
+				renderer.markToSync( 'children', viewRoot.getChild( 0 ) );
+				renderer.render();
+
+				const mutationRecords = observer.takeRecords();
+
+				expect( mutationRecords.length ).to.equal( 1 );
+				expect( mutationRecords[ 0 ].type ).to.equal( 'characterData' );
+				expect( getMutationStats( mutationRecords ) ).to.deep.equal( [
+					'updated text: "foo" to "foobar"'
+				] );
+			} );
+
+			it( 'should update existing text node on split by an inline element', () => {
+				viewRoot._appendChild( parse( '<container:p>foobar</container:p>' ) );
+
+				renderer.markToSync( 'children', viewRoot );
+				renderer.render();
+				cleanObserver( observer );
+
+				viewRoot.getChild( 0 ).getChild( 0 )._textData = 'foo';
+				viewRoot.getChild( 0 )._insertChild( 1, parse( '<attribute:strong>123</attribute:strong>bar' ) );
+
+				observer.disconnect();
+				observer.observe( domRoot, {
+					childList: true,
+					attributes: false,
+					characterData: true,
+					characterDataOldValue: true,
+					subtree: true
+				} );
+
+				renderer.markToSync( 'children', viewRoot.getChild( 0 ) );
+				renderer.render();
+
+				const mutationRecords = observer.takeRecords();
+
+				expect( mutationRecords.length ).to.equal( 3 );
+				expect( mutationRecords[ 0 ].type ).to.equal( 'characterData' );
+				expect( mutationRecords[ 1 ].type ).to.equal( 'childList' );
+				expect( mutationRecords[ 2 ].type ).to.equal( 'childList' );
+				expect( getMutationStats( mutationRecords ) ).to.deep.equal( [
+					'updated text: "foobar" to "foo"',
+					'added: [ <strong> ], removed: []',
+					'added: [ text: "bar" ], removed: []'
+				] );
+			} );
+
+			// https://github.com/ckeditor/ckeditor5/issues/12574.
+			it( 'should normalize text nodes (on Android)', () => {
+				testUtils.sinon.stub( env, 'isAndroid' ).value( true );
+
+				viewRoot._appendChild( parse( '<container:p>foo</container:p>' ) );
+
+				renderer.markToSync( 'children', viewRoot );
+				renderer.render();
+				cleanObserver( observer );
+
+				viewRoot.getChild( 0 ).getChild( 0 )._textData = 'xfoo';
+				domRoot.firstChild.insertBefore( document.createTextNode( 'x' ), domRoot.firstChild.firstChild );
+
+				observer.disconnect();
+				observer.observe( domRoot, {
+					childList: true,
+					attributes: false,
+					characterData: true,
+					subtree: true
+				} );
+
+				renderer.markToSync( 'children', viewRoot.getChild( 0 ) );
+				renderer.render();
+
+				const mutationRecords = observer.takeRecords();
+
+				expect( mutationRecords.length ).to.equal( 2 );
+				expect( mutationRecords[ 0 ].type ).to.equal( 'characterData' );
+				expect( mutationRecords[ 1 ].type ).to.equal( 'childList' );
+				expect( mutationRecords[ 1 ].removedNodes[ 0 ].data ).to.equal( 'foo' );
+
+				expect( domRoot.firstChild.childNodes.length ).to.equal( 1 );
+				expect( domRoot.firstChild.firstChild.data ).to.equal( 'xfoo' );
+			} );
+
+			it( 'should update existing text node (mixed content)', () => {
+				viewRoot._appendChild( parse( '<container:p>foo<container:b>123</container:b>456</container:p>' ) );
+
+				renderer.markToSync( 'children', viewRoot );
+				renderer.render();
+				cleanObserver( observer );
+
+				viewRoot.getChild( 0 ).getChild( 0 )._textData = 'foobar';
+
+				observer.disconnect();
+				observer.observe( domRoot, {
+					childList: true,
+					attributes: false,
+					characterData: true,
+					characterDataOldValue: true,
+					subtree: true
+				} );
+
+				renderer.markToSync( 'children', viewRoot.getChild( 0 ) );
+				renderer.render();
+
+				const mutationRecords = observer.takeRecords();
+
+				expect( mutationRecords.length ).to.equal( 1 );
+				expect( mutationRecords[ 0 ].type ).to.equal( 'characterData' );
+				expect( getMutationStats( mutationRecords ) ).to.deep.equal( [
+					'updated text: "foo" to "foobar"'
 				] );
 			} );
 
@@ -3602,7 +3836,7 @@ describe( 'Renderer', () => {
 				renderer.render();
 
 				expect( getMutationStats( observer.takeRecords() ) ).to.deep.equal( [
-					'added: 0, removed: 1'
+					'added: [], removed: [ <p> ]'
 				] );
 			} );
 
@@ -3637,7 +3871,7 @@ describe( 'Renderer', () => {
 				renderer.render();
 
 				expect( getMutationStats( observer.takeRecords() ) ).to.deep.equal( [
-					'added: 0, removed: 1'
+					'added: [], removed: [ <p> ]'
 				] );
 
 				observer.disconnect();
@@ -3657,7 +3891,7 @@ describe( 'Renderer', () => {
 					renderer.render();
 
 					expect( getMutationStats( observer.takeRecords() ) ).to.deep.equal( [
-						'added: 1, removed: 0'
+						'added: [ <p> ], removed: []'
 					] );
 				} );
 
@@ -3674,7 +3908,7 @@ describe( 'Renderer', () => {
 					renderer.render();
 
 					expect( getMutationStats( observer.takeRecords() ) ).to.deep.equal( [
-						'added: 1, removed: 0'
+						'added: [ <p> ], removed: []'
 					] );
 				} );
 
@@ -3691,7 +3925,7 @@ describe( 'Renderer', () => {
 					renderer.render();
 
 					expect( getMutationStats( observer.takeRecords() ) ).to.deep.equal( [
-						'added: 1, removed: 0'
+						'added: [ <p> ], removed: []'
 					] );
 				} );
 
@@ -3725,8 +3959,8 @@ describe( 'Renderer', () => {
 					renderer.render();
 
 					expect( getMutationStats( observer.takeRecords() ) ).to.deep.equal( [
-						'added: 0, removed: 1',
-						'added: 1, removed: 0'
+						'added: [], removed: [ <p> ]',
+						'added: [ <h1> ], removed: []'
 					] );
 				} );
 
@@ -3749,20 +3983,10 @@ describe( 'Renderer', () => {
 					renderer.render();
 
 					expect( getMutationStats( observer.takeRecords() ) ).to.deep.equal( [
-						'added: 0, removed: 1'
+						'added: [], removed: [ <p> ]'
 					] );
 				} );
 			} );
-
-			function getMutationStats( mutationList ) {
-				return mutationList.map( mutation => {
-					return `added: ${ mutation.addedNodes.length }, removed: ${ mutation.removedNodes.length }`;
-				} );
-			}
-
-			function cleanObserver( observer ) {
-				observer.takeRecords();
-			}
 
 			function makeContainers( howMany ) {
 				const containers = [];
@@ -3898,14 +4122,14 @@ describe( 'Renderer', () => {
 				expect( renderingTime ).to.be.within( 0, 350 );
 			} );
 
-			it( 'should not take more than 350ms to render around 1000 element nodes (same html)', () => {
+			it( 'should not take more than 400ms to render around 1000 element nodes (same html)', () => {
 				const renderingTime = measureRenderingTime( viewRoot, generateViewData1( 195 ), generateViewData1( 205 ) );
-				expect( renderingTime ).to.be.within( 0, 350 );
+				expect( renderingTime ).to.be.within( 0, 400 );
 			} );
 
-			it( 'should not take more than 350ms to render around 1000 element nodes (different html)', () => {
+			it( 'should not take more than 400ms to render around 1000 element nodes (different html)', () => {
 				const renderingTime = measureRenderingTime( viewRoot, generateViewData1( 205 ), generateViewData2( 195 ) );
-				expect( renderingTime ).to.be.within( 0, 350 );
+				expect( renderingTime ).to.be.within( 0, 400 );
 			} );
 
 			function measureRenderingTime( viewRoot, initialData, newData ) {
@@ -4062,7 +4286,7 @@ describe( 'Renderer', () => {
 				expect( normalizeHtml( domRoot.innerHTML ) ).to.equal( '<p data-ck-unsafe-attribute-onclick="test">foo</p>' );
 			} );
 
-			it( 'should rename attributes that can affect editing pipeline unless permitted when the element was created', () => {
+			it( 'should rename attributes that can affect editing pipeline unless permitted when the container element was created', () => {
 				view.change( writer => {
 					const containerElement = writer.createContainerElement( 'p', {
 						onclick: 'foo',
@@ -4080,6 +4304,27 @@ describe( 'Renderer', () => {
 				expect( getViewData( view ) ).to.equal( '<p onclick="foo" onkeydown="bar">baz</p>' );
 				expect( normalizeHtml( domRoot.innerHTML ) ).to.equal(
 					'<p data-ck-unsafe-attribute-onkeydown="bar" onclick="foo">baz</p>'
+				);
+			} );
+
+			it( 'should rename attributes that can affect editing pipeline unless permitted when an attribute element was created', () => {
+				view.change( writer => {
+					const attributeElement = writer.createAttributeElement( 'span', {
+						onclick: 'foo',
+						onkeydown: 'bar'
+					}, {
+						renderUnsafeAttributes: [ 'onclick' ]
+					} );
+
+					writer.insert( writer.createPositionAt( view.document.getRoot(), 'start' ), writer.createText( 'baz' ) );
+					writer.wrap( writer.createRangeIn( view.document.getRoot() ), attributeElement );
+				} );
+
+				view.forceRender();
+
+				expect( getViewData( view ) ).to.equal( '<span onclick="foo" onkeydown="bar">baz</span>' );
+				expect( normalizeHtml( domRoot.innerHTML ) ).to.equal(
+					'<span data-ck-unsafe-attribute-onkeydown="bar" onclick="foo">baz</span>'
 				);
 			} );
 
@@ -4125,8 +4370,9 @@ describe( 'Renderer', () => {
 		} );
 	} );
 
-	describe( '#922', () => {
-		let view, viewDoc, viewRoot, domRoot, converter;
+	// https://github.com/ckeditor/ckeditor5-engine/pull/989.
+	describe( 'Prevent unbinding reused DOM elements while rendering', () => {
+		let view, viewDoc, viewRoot, domRoot, converter, observer;
 
 		beforeEach( () => {
 			view = new View( new StylesProcessor() );
@@ -4136,9 +4382,20 @@ describe( 'Renderer', () => {
 			viewRoot = createViewRoot( viewDoc );
 			view.attachDomRoot( domRoot );
 			converter = view.domConverter;
+
+			observer = new MutationObserver( () => {} );
+
+			observer.observe( domRoot, {
+				childList: true,
+				attributes: false,
+				characterData: true,
+				subtree: true,
+				characterDataOldValue: true
+			} );
 		} );
 
 		afterEach( () => {
+			observer.disconnect();
 			view.destroy();
 			domRoot.remove();
 		} );
@@ -4248,6 +4505,133 @@ describe( 'Renderer', () => {
 			// Check if DOM is rendered correctly.
 			expect( normalizeHtml( domRoot.innerHTML ) ).to.equal( '<p><img></img>foobar</p>' );
 			expect( checkMappings() ).to.be.true;
+		} );
+
+		it( 'should properly render if text is changed and text and element is inserted into same node', () => {
+			setViewData( view,
+				'<container:p>foo<attribute:strong>123</attribute:strong>456</container:p>'
+			);
+
+			// Render it to DOM to create initial DOM <-> view mappings.
+			view.forceRender();
+			cleanObserver( observer );
+
+			// Modify the view.
+			view.change( writer => {
+				writer.insert(
+					writer.createPositionAfter( viewRoot.getChild( 0 ).getChild( 0 ) ),
+					parse( 'bar<attribute:strong>abc</attribute:strong>' )
+				);
+			} );
+
+			expect( getViewData( view ) ).to.equal( '<p>foobar<strong>abc123</strong>456</p>' );
+
+			// Re-render changes in view to DOM.
+			view.forceRender();
+
+			// Check if DOM is rendered correctly.
+			expect( normalizeHtml( domRoot.innerHTML ) ).to.equal( '<p>foobar<strong>abc123</strong>456</p>' );
+			expect( checkMappings() ).to.be.true;
+
+			expect( getMutationStats( observer.takeRecords() ) ).to.deep.equal( [
+				'updated text: "foo" to "foobar"',
+				'updated text: "123" to "abc123"'
+			] );
+		} );
+
+		it( 'should properly render if text is replaced by similar element and following text', () => {
+			setViewData( view,
+				'<container:p>foo<attribute:strong>123</attribute:strong>456</container:p>'
+			);
+
+			// Render it to DOM to create initial DOM <-> view mappings.
+			view.forceRender();
+			cleanObserver( observer );
+
+			// Modify the view.
+			view.change( writer => {
+				writer.remove( viewRoot.getChild( 0 ).getChild( 0 ) );
+				writer.insert(
+					writer.createPositionAt( viewRoot.getChild( 0 ), 0 ),
+					parse(
+						'<attribute:strong>abc</attribute:strong>' +
+						'bar' +
+						'<attribute:strong>xyz</attribute:strong>'
+					)
+				);
+			} );
+
+			expect( getViewData( view ) ).to.equal( '<p><strong>abc</strong>bar<strong>xyz123</strong>456</p>' );
+
+			// Re-render changes in view to DOM.
+			view.forceRender();
+
+			// Check if DOM is rendered correctly.
+			expect( normalizeHtml( domRoot.innerHTML ) ).to.equal( '<p><strong>abc</strong>bar<strong>xyz123</strong>456</p>' );
+			expect( checkMappings() ).to.be.true;
+
+			expect( getMutationStats( observer.takeRecords() ) ).to.deep.equal( [
+				// Delete node "foo".
+				'added: [], removed: [ text: "foo" ]',	// <p><strong>123</strong>456</p>
+
+				// Insert "bar".
+				'added: [ text: "bar" ], removed: []',	// <p><strong>123</strong>bar456</p>
+
+				// Insert <strong>xyz123</strong>.
+				'added: [ <strong> ], removed: []',		// <p><strong>123</strong>bar<strong>xyz123</strong>456</p>
+
+				// Insert "abc". Note that "abc" is a final result of all changes in the mutation result.
+				'updated text: "123" to "abc"',			// <p><strong>abc123</strong>bar<strong>xyz123</strong>456</p>
+
+				// Delete "123". Note that "abc" is a final result of all changes in the mutation result.
+				'updated text: "abc123" to "abc"'		// <p><strong>abc</strong>bar<strong>xyz123</strong>456</p>
+			] );
+		} );
+
+		it( 'should properly render if text is replaced by an element and following text', () => {
+			setViewData( view,
+				'<container:p>foo<attribute:strong>123</attribute:strong>456</container:p>'
+			);
+
+			// Render it to DOM to create initial DOM <-> view mappings.
+			view.forceRender();
+			cleanObserver( observer );
+
+			// Modify the view.
+			view.change( writer => {
+				writer.remove( viewRoot.getChild( 0 ).getChild( 0 ) );
+				writer.insert(
+					writer.createPositionAt( viewRoot.getChild( 0 ), 0 ),
+					parse(
+						'<attribute:em>abc</attribute:em>' +
+						'bar' +
+						'<attribute:strong>xyz</attribute:strong>'
+					)
+				);
+			} );
+
+			expect( getViewData( view ) ).to.equal( '<p><em>abc</em>bar<strong>xyz123</strong>456</p>' );
+
+			// Re-render changes in view to DOM.
+			view.forceRender();
+
+			// Check if DOM is rendered correctly.
+			expect( normalizeHtml( domRoot.innerHTML ) ).to.equal( '<p><em>abc</em>bar<strong>xyz123</strong>456</p>' );
+			expect( checkMappings() ).to.be.true;
+
+			expect( getMutationStats( observer.takeRecords() ) ).to.deep.equal( [
+				// Insert `<em>abc<em>`.
+				'added: [ <em> ], removed: []',		// <p><em>abc</em>foo<strong>123</strong>456</p>
+
+				// Insert "bar". Note that "bar" is a final result of all changes in the mutation result.
+				'updated text: "foo" to "bar"',		// <p><em>abc</em>barfoo<strong>123</strong>456</p>
+
+				// Delete "foo". Note that "bar" is a final result of all changes in the mutation result.
+				'updated text: "barfoo" to "bar"',	// <p><em>abc</em>bar<strong>123</strong>456</p>
+
+				// Insert "xyz".
+				'updated text: "123" to "xyz123"'	// <p><em>abc</em>bar<strong>xyz123</strong>456</p>
+			] );
 		} );
 
 		it( 'should not unbind elements that are removed and reinserted to DOM', () => {
@@ -4561,6 +4945,158 @@ describe( 'Renderer', () => {
 					expect( domSelection.getRangeAt( 0 ).startOffset ).to.equal( 1 );
 					expect( domSelection.getRangeAt( 0 ).endOffset ).to.equal( 2 );
 				} );
+
+				// https://github.com/ckeditor/ckeditor5/issues/11472.
+				it( 'should not remove the inline filler while the user is making selection', () => {
+					const domSelection = document.getSelection();
+
+					const {
+						view: viewParagraph,
+						selection: viewSelection
+					} = parse( '<container:p><attribute:b>foo<attribute:i>[]</attribute:i></attribute:b></container:p>' );
+
+					viewRoot._appendChild( viewParagraph );
+					selection._setTo( viewSelection );
+
+					// -----------------------------------------------------------------------------------------------
+					// STEP #1: The first render() is to set the initial state of the editor.
+					renderer.markToSync( 'children', viewRoot );
+					renderer.render();
+
+					const domParagraph = domRoot.childNodes[ 0 ];
+
+					// The filler was inserted <p><b>foo<i>FILLER{}</i></b></p>.
+					expect( domParagraph.childNodes.length ).to.equal( 1 );
+					expect( domParagraph.childNodes[ 0 ].outerHTML ).to.equal( `<b>foo<i>${ INLINE_FILLER }</i></b>` );
+
+					let domItalic = domParagraph.childNodes[ 0 ].childNodes[ 1 ];
+
+					expect( domSelection.rangeCount ).to.equal( 1 );
+					expect( domSelection.getRangeAt( 0 ).startContainer ).to.equal( domItalic.childNodes[ 0 ] );
+					expect( domSelection.getRangeAt( 0 ).startOffset ).to.equal( INLINE_FILLER_LENGTH );
+					expect( domSelection.getRangeAt( 0 ).collapsed ).to.be.true;
+
+					// -----------------------------------------------------------------------------------------------
+					// STEP #2: Now typing in the same node as an inline filler.
+					// Then comes the second render().
+					// * The filler should be still at the beginning of a text node:   <p><b>foo<i>FILLER{}bar</i></b></p>
+
+					const viewItalic = viewParagraph.getChild( 0 ).getChild( 1 );
+					const viewText = new ViewText( viewDocument, 'bar' );
+
+					viewItalic._appendChild( viewText );
+
+					// <p><b>foo<i>bar{}</i></b></p>.
+					selection._setTo(
+						ViewRange._createFromParentsAndOffsets(
+							viewText, viewText.data.length,
+							viewText, viewText.data.length
+						)
+					);
+
+					renderer.markToSync( 'children', viewRoot );
+					renderer.markToSync( 'text', viewText );
+					renderer.render();
+
+					// The filler was still at the beginning of a text node <p><b>foo<i>FILLER{}bar</i></b></p>.
+					expect( domParagraph.childNodes.length ).to.equal( 1 );
+					expect( domParagraph.childNodes[ 0 ].outerHTML ).to.equal( `<b>foo<i>${ INLINE_FILLER }bar</i></b>` );
+
+					domItalic = domParagraph.childNodes[ 0 ].childNodes[ 1 ];
+
+					expect( domSelection.rangeCount ).to.equal( 1 );
+					expect( domSelection.getRangeAt( 0 ).startContainer ).to.equal( domItalic.childNodes[ 0 ] );
+					expect( domSelection.getRangeAt( 0 ).startOffset ).to.equal( INLINE_FILLER_LENGTH + viewText.data.length );
+					expect( domSelection.getRangeAt( 0 ).collapsed ).to.be.true;
+
+					// -----------------------------------------------------------------------------------------------
+					// STEP #3: Now we're moving the selection somewhere else while isSelecting = true
+					// and rendering once again after isSelecting = false.
+					renderer.isSelecting = true;
+
+					// <p><b>foo{}<i>bar</i></b></p>.
+					selection._setTo(
+						ViewRange._createFromParentsAndOffsets(
+							viewParagraph.getChild( 0 ).getChild( 0 ), 3,
+							viewParagraph.getChild( 0 ).getChild( 0 ), 3
+						)
+					);
+
+					// Mark the text node to sync to verify if inline filler won't get removed.
+					renderer.markToSync( 'text', viewText );
+					renderer.render();
+
+					renderer.isSelecting = false;
+					renderer.render();
+
+					// The inline filler should be removed without crashing <p><b>foo{}<i>bar</i></b></p>.
+					expect( domParagraph.childNodes.length ).to.equal( 1 );
+					expect( domParagraph.childNodes[ 0 ].outerHTML ).to.equal( '<b>foo<i>bar</i></b>' );
+
+					expect( domSelection.rangeCount ).to.equal( 1 );
+					expect( domSelection.getRangeAt( 0 ).startContainer ).to.equal( domParagraph.childNodes[ 0 ].childNodes[ 0 ] );
+					expect( domSelection.getRangeAt( 0 ).startOffset ).to.equal( 3 );
+					expect( domSelection.getRangeAt( 0 ).collapsed ).to.be.true;
+				} );
+
+				it( 'should not crash if document selection attribute was removed while making a selection', () => {
+					const domSelection = document.getSelection();
+
+					const {
+						view: viewParagraph,
+						selection: viewSelection
+					} = parse( '<container:p>foo<attribute:b>[]</attribute:b></container:p>' );
+
+					viewRoot._appendChild( viewParagraph );
+					selection._setTo( viewSelection );
+
+					// -----------------------------------------------------------------------------------------------
+					// STEP #1: The first render() is to set the initial state of the editor.
+					renderer.markToSync( 'children', viewRoot );
+					renderer.render();
+
+					let domParagraph = domRoot.childNodes[ 0 ];
+
+					// The filler was inserted <p>foo<b>"FILLER{}"</b></p>.
+					expect( domParagraph.childNodes.length ).to.equal( 2 );
+					expect( domParagraph.childNodes[ 0 ].data ).to.equal( 'foo' );
+					expect( domParagraph.childNodes[ 1 ].outerHTML ).to.equal( `<b>${ INLINE_FILLER }</b>` );
+
+					expect( domSelection.rangeCount ).to.equal( 1 );
+					expect( domSelection.getRangeAt( 0 ).startContainer ).to.equal( domParagraph.childNodes[ 1 ].firstChild );
+					expect( domSelection.getRangeAt( 0 ).startOffset ).to.equal( INLINE_FILLER_LENGTH );
+					expect( domSelection.getRangeAt( 0 ).collapsed ).to.be.true;
+
+					// -----------------------------------------------------------------------------------------------
+					// STEP #2: Now we're moving the selection somewhere else while isSelecting = true.
+					// Then comes the second render().
+					// * The document selection down-cast is removing an empty attribute element
+					renderer.isSelecting = true;
+
+					// Remove the selection attribute (since we are going to move the selection).
+					selection.getFirstPosition().parent._remove();
+					renderer.markToSync( 'children', viewParagraph );
+
+					// <p>[foo<b></b>]</p>.
+					selection._setTo( ViewRange._createIn( viewParagraph ) );
+					renderer.render();
+
+					// Another render so the attribute element is gone, and it should not crash here.
+					renderer.render();
+
+					domParagraph = domRoot.childNodes[ 0 ];
+
+					// The filler and empty attribute element is removed <p>[foo]</p>.
+					expect( domParagraph.childNodes.length ).to.equal( 1 );
+					expect( domParagraph.childNodes[ 0 ].data ).to.equal( 'foo' );
+
+					expect( domSelection.rangeCount ).to.equal( 1 );
+					expect( domSelection.getRangeAt( 0 ).startContainer ).to.equal( domParagraph );
+					expect( domSelection.getRangeAt( 0 ).startOffset ).to.equal( 0 );
+					expect( domSelection.getRangeAt( 0 ).endContainer ).to.equal( domParagraph );
+					expect( domSelection.getRangeAt( 0 ).endOffset ).to.equal( 1 );
+					expect( domSelection.getRangeAt( 0 ).collapsed ).to.be.false;
+				} );
 			} );
 
 			describe( 'in Blink (Android)', () => {
@@ -4570,7 +5106,11 @@ describe( 'Renderer', () => {
 					renderer.isSelecting = false;
 				} );
 
-				it( 'should remove the inline filler despite the user making selection', () => {
+				// This test is skipped because on Android we disabled inline filler at the edge of an element.
+				// On Android it's not possible to prevent default the beforeInput deleteContent events so
+				// inline filler would be trimmed and lost.
+				// (it's still used inside an empty inline element).
+				it.skip( 'should remove the inline filler despite the user making selection', () => {
 					const domSelection = document.getSelection();
 
 					const {
@@ -4626,7 +5166,11 @@ describe( 'Renderer', () => {
 					expect( domSelection.getRangeAt( 0 ).endOffset ).to.equal( 2 );
 				} );
 
-				it( 'should add the inline filler despite the user making selection', () => {
+				// This test is skipped because on Android we disabled inline filler at the edge of an element.
+				// On Android it's not possible to prevent default the beforeInput deleteContent events so
+				// inline filler would be trimmed and lost.
+				// (it's still used inside an empty inline element).
+				it.skip( 'should add the inline filler despite the user making selection', () => {
 					const domSelection = document.getSelection();
 
 					const {
@@ -5016,6 +5560,193 @@ describe( 'Renderer', () => {
 		} );
 	} );
 
+	describe( 'Blocking rendering while composing (IME)', () => {
+		it( 'should call #render() as soon as the user end composition in the document', () => {
+			const viewDocument = new ViewDocument( new StylesProcessor() );
+			const selection = new DocumentSelection();
+			const domConverter = new DomConverter( viewDocument, { renderingMode: 'editing' } );
+			const renderer = new Renderer( domConverter, selection );
+
+			renderer.domDocuments.add( document );
+
+			const renderSpy = sinon.spy( renderer, 'render' );
+
+			expect( renderer.isComposing ).to.be.false;
+
+			renderer.isComposing = true;
+
+			sinon.assert.notCalled( renderSpy );
+
+			renderer.isComposing = false;
+
+			sinon.assert.calledOnce( renderSpy );
+
+			viewDocument.destroy();
+		} );
+
+		describe( 'render()', () => {
+			let viewRoot, domRoot;
+
+			beforeEach( () => {
+				viewRoot = new ViewEditableElement( viewDocument, 'div' );
+				domRoot = document.createElement( 'div' );
+				document.body.appendChild( domRoot );
+				domConverter.bindElements( domRoot, viewRoot );
+
+				renderer.markedTexts.clear();
+				renderer.markedAttributes.clear();
+				renderer.markedChildren.clear();
+
+				selection._setTo( null );
+				renderer.isFocused = true;
+			} );
+
+			afterEach( () => {
+				domRoot.remove();
+			} );
+
+			it( 'should not update text (marked text)', () => {
+				const viewText = new ViewText( viewDocument, 'foo' );
+				viewRoot._appendChild( viewText );
+
+				renderer.markToSync( 'children', viewRoot );
+				renderer.render();
+
+				expect( domRoot.childNodes.length ).to.equal( 1 );
+				expect( domRoot.childNodes[ 0 ].data ).to.equal( 'foo' );
+
+				renderer.isComposing = true;
+
+				domRoot.childNodes[ 0 ].insertData( 3, 'bar' );
+
+				renderer.markToSync( 'text', viewText );
+				renderAndExpectNoChanges( renderer, domRoot );
+
+				expect( domRoot.childNodes.length ).to.equal( 1 );
+				expect( domRoot.childNodes[ 0 ].data ).to.equal( 'foobar' );
+
+				expect( renderer.markedTexts.size ).to.equal( 1 );
+			} );
+
+			it( 'should not update text (parent child list changed)', () => {
+				const viewImg = new ViewElement( viewDocument, 'img' );
+				const viewText = new ViewText( viewDocument, 'foo' );
+				viewRoot._appendChild( [ viewImg, viewText ] );
+
+				renderer.markToSync( 'children', viewRoot );
+				renderer.render();
+
+				expect( domRoot.childNodes.length ).to.equal( 2 );
+				expect( domRoot.childNodes[ 0 ].tagName ).to.equal( 'IMG' );
+				expect( domRoot.childNodes[ 1 ].data ).to.equal( 'foo' );
+
+				renderer.isComposing = true;
+
+				domRoot.childNodes[ 1 ].insertData( 3, 'bar' );
+
+				renderer.markToSync( 'children', viewRoot );
+				renderer.markToSync( 'text', viewText );
+				renderAndExpectNoChanges( renderer, domRoot );
+
+				expect( domRoot.childNodes.length ).to.equal( 2 );
+				expect( domRoot.childNodes[ 0 ].tagName ).to.equal( 'IMG' );
+				expect( domRoot.childNodes[ 1 ].data ).to.equal( 'foobar' );
+			} );
+
+			it( 'should not change text if it is the same during children rendering', () => {
+				const viewText = new ViewText( viewDocument, 'foo' );
+				viewRoot._appendChild( viewText );
+
+				renderer.markToSync( 'children', viewRoot );
+				renderer.render();
+
+				// This should not be changed during the render.
+				const domText = domRoot.childNodes[ 0 ];
+
+				renderer.isComposing = true;
+				domText.insertData( 3, 'bar' );
+
+				renderer.markToSync( 'children', viewRoot );
+				renderAndExpectNoChanges( renderer, domRoot );
+
+				expect( domRoot.childNodes.length ).to.equal( 1 );
+				expect( domRoot.childNodes[ 0 ] ).to.equal( domText );
+			} );
+
+			it( 'should not modify selection', () => {
+				const domSelection = document.getSelection();
+
+				const { view: viewP, selection: newSelection } = parse( '<container:p>fo{}o</container:p>' );
+
+				viewRoot._appendChild( viewP );
+				selection._setTo( newSelection );
+
+				renderer.markToSync( 'children', viewRoot );
+				renderer.render();
+
+				const domP = domRoot.childNodes[ 0 ];
+
+				expect( domSelection.isCollapsed ).to.true;
+				expect( domSelection.rangeCount ).to.equal( 1 );
+				expect( domSelection.getRangeAt( 0 ).startContainer ).to.equal( domP.childNodes[ 0 ] );
+				expect( domSelection.getRangeAt( 0 ).startOffset ).to.equal( 2 );
+				expect( domSelection.getRangeAt( 0 ).endContainer ).to.equal( domP.childNodes[ 0 ] );
+				expect( domSelection.getRangeAt( 0 ).endOffset ).to.equal( 2 );
+
+				const selectionCollapseSpy = sinon.spy( window.Selection.prototype, 'collapse' );
+				const selectionExtendSpy = sinon.spy( window.Selection.prototype, 'extend' );
+
+				selection._setTo( [
+					new ViewRange( new ViewPosition( viewP.getChild( 0 ), 3 ), new ViewPosition( viewP.getChild( 0 ), 3 ) )
+				] );
+
+				renderer.isComposing = true;
+				renderer.markToSync( 'children', viewP );
+				renderAndExpectNoChanges( renderer, domRoot );
+
+				expect( selectionCollapseSpy.notCalled ).to.true;
+				expect( selectionExtendSpy.notCalled ).to.true;
+			} );
+
+			it( 'should not modify selection on Android', () => {
+				testUtils.sinon.stub( env, 'isAndroid' ).value( true );
+
+				const domSelection = document.getSelection();
+
+				const { view: viewP, selection: newSelection } = parse( '<container:p>fo{}o</container:p>' );
+
+				viewRoot._appendChild( viewP );
+				selection._setTo( newSelection );
+
+				renderer.markToSync( 'children', viewRoot );
+				renderer.render();
+
+				const domP = domRoot.childNodes[ 0 ];
+
+				expect( domSelection.isCollapsed ).to.true;
+				expect( domSelection.rangeCount ).to.equal( 1 );
+				expect( domSelection.getRangeAt( 0 ).startContainer ).to.equal( domP.childNodes[ 0 ] );
+				expect( domSelection.getRangeAt( 0 ).startOffset ).to.equal( 2 );
+				expect( domSelection.getRangeAt( 0 ).endContainer ).to.equal( domP.childNodes[ 0 ] );
+				expect( domSelection.getRangeAt( 0 ).endOffset ).to.equal( 2 );
+
+				const selectionCollapseSpy = sinon.spy( window.Selection.prototype, 'collapse' );
+				const selectionExtendSpy = sinon.spy( window.Selection.prototype, 'extend' );
+
+				selection._setTo( [
+					new ViewRange( new ViewPosition( viewP.getChild( 0 ), 3 ), new ViewPosition( viewP.getChild( 0 ), 3 ) )
+				] );
+
+				renderer.isComposing = true;
+				renderer.markToSync( 'children', viewP );
+				renderAndExpectNoChanges( renderer, domRoot );
+
+				expect( selectionCollapseSpy.notCalled ).to.true;
+				expect( selectionExtendSpy.notCalled ).to.true;
+			} );
+		} );
+	} );
+
 	describe( '_markDescendantTextToSync', () => {
 		let viewRoot;
 
@@ -5332,6 +6063,37 @@ describe( 'Renderer', () => {
 			expect( domRoot.childNodes[ 0 ].childNodes[ 0 ].data ).to.equal( 'bar' );
 		} );
 	} );
+
+	function getMutationStats( mutationList ) {
+		return mutationList.map( mutation => {
+			if ( mutation.type == 'characterData' ) {
+				return `updated text: ${ JSON.stringify( mutation.oldValue ) } to ${ JSON.stringify( mutation.target.data ) }`;
+			} else {
+				return `added: ${ stringifyNodeList( mutation.addedNodes ) }, removed: ${ stringifyNodeList( mutation.removedNodes ) }`;
+			}
+		} );
+
+		function stringifyNode( node ) {
+			if ( node.nodeType == 1 ) {
+				return `<${ node.nodeName.toLowerCase() }>`;
+			} else if ( node.nodeType == 3 ) {
+				return `text: ${ JSON.stringify( node.data ) }`;
+			} else {
+				return 'node';
+			}
+		}
+
+		function stringifyNodeList( nodeList ) {
+			const nodeArray = Array.from( nodeList );
+			const stringified = nodeArray.map( node => stringifyNode( node ) ).join( ', ' );
+
+			return stringified ? `[ ${ stringified } ]` : '[]';
+		}
+	}
+
+	function cleanObserver( observer ) {
+		observer.takeRecords();
+	}
 } );
 
 function renderAndExpectNoChanges( renderer, domRoot ) {

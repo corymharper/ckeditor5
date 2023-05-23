@@ -1,5 +1,5 @@
 /**
- * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+ * @license Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
@@ -301,14 +301,14 @@ describe( 'TableCaptionEditing', () => {
 						'<table>' +
 							'<tbody>' +
 								'<tr>' +
-									'<td class="ck-editor__editable ck-editor__nested-editable" contenteditable="true">' +
+									'<td class="ck-editor__editable ck-editor__nested-editable" contenteditable="true" role="textbox">' +
 										'<span class="ck-table-bogus-paragraph">xyz</span>' +
 									'</td>' +
 								'</tr>' +
 							'</tbody>' +
 						'</table>' +
 						'<figcaption class="ck-editor__editable ck-editor__nested-editable" ' +
-								'contenteditable="true" data-placeholder="Enter table caption">' +
+								'contenteditable="true" data-placeholder="Enter table caption" role="textbox">' +
 							'Foo caption' +
 						'</figcaption>' +
 					'</figure>'

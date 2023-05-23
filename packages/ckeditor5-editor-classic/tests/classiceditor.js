@@ -1,21 +1,22 @@
 /**
- * @license Copyright (c) 2003-2022, CKSource Holding sp. z o.o. All rights reserved.
+ * @license Copyright (c) 2003-2023, CKSource Holding sp. z o.o. All rights reserved.
  * For licensing, see LICENSE.md or https://ckeditor.com/legal/ckeditor-oss-license
  */
 
 /* globals document, Event, console */
 
+import ClassicEditor from '../src/classiceditor';
 import ClassicEditorUI from '../src/classiceditorui';
 import ClassicEditorUIView from '../src/classiceditoruiview';
 
 import HtmlDataProcessor from '@ckeditor/ckeditor5-engine/src/dataprocessor/htmldataprocessor';
 
-import ClassicEditor from '../src/classiceditor';
+import Context from '@ckeditor/ckeditor5-core/src/context';
+import EditorWatchdog from '@ckeditor/ckeditor5-watchdog/src/editorwatchdog';
+import ContextWatchdog from '@ckeditor/ckeditor5-watchdog/src/contextwatchdog';
 import Plugin from '@ckeditor/ckeditor5-core/src/plugin';
 import Paragraph from '@ckeditor/ckeditor5-paragraph/src/paragraph';
 import Bold from '@ckeditor/ckeditor5-basic-styles/src/bold';
-import DataApiMixin from '@ckeditor/ckeditor5-core/src/editor/utils/dataapimixin';
-import ElementApiMixin from '@ckeditor/ckeditor5-core/src/editor/utils/elementapimixin';
 import RootElement from '@ckeditor/ckeditor5-engine/src/model/rootelement';
 import CKEditorError from '@ckeditor/ckeditor5-utils/src/ckeditorerror';
 
@@ -51,12 +52,13 @@ describe( 'ClassicEditor', () => {
 			expect( editor.data.processor ).to.be.instanceof( HtmlDataProcessor );
 		} );
 
-		it( 'has a Data Interface', () => {
-			expect( testUtils.isMixed( ClassicEditor, DataApiMixin ) ).to.true;
+		it( 'mixes DataApiMixin', () => {
+			expect( ClassicEditor.prototype ).have.property( 'setData' ).to.be.a( 'function' );
+			expect( ClassicEditor.prototype ).have.property( 'getData' ).to.be.a( 'function' );
 		} );
 
-		it( 'has a Element Interface', () => {
-			expect( testUtils.isMixed( ClassicEditor, ElementApiMixin ) ).to.true;
+		it( 'mixes ElementApiMixin', () => {
+			expect( ClassicEditor.prototype ).have.property( 'updateSourceElement' ).to.be.a( 'function' );
 		} );
 
 		it( 'creates main root element', () => {
@@ -337,7 +339,19 @@ describe( 'ClassicEditor', () => {
 				} );
 		} );
 
+		it( 'don\'t set the data back to the editor element', () => {
+			editor.setData( '<p>foo</p>' );
+
+			return editor.destroy()
+				.then( () => {
+					expect( editorElement.innerHTML ).to.equal( '' );
+				} );
+		} );
+
+		// Adding `updateSourceElementOnDestroy` config to the editor allows setting the data
+		// back to the source element after destroy.
 		it( 'sets the data back to the editor element', () => {
+			editor.config.set( 'updateSourceElementOnDestroy', true );
 			editor.setData( '<p>foo</p>' );
 
 			return editor.destroy()
@@ -372,6 +386,20 @@ describe( 'ClassicEditor', () => {
 				.then( () => {
 					expect( editor.sourceElement.style.display ).to.equal( '' );
 				} );
+		} );
+	} );
+
+	describe( 'static fields', () => {
+		it( 'ClassicEditor.Context', () => {
+			expect( ClassicEditor.Context ).to.equal( Context );
+		} );
+
+		it( 'ClassicEditor.EditorWatchdog', () => {
+			expect( ClassicEditor.EditorWatchdog ).to.equal( EditorWatchdog );
+		} );
+
+		it( 'ClassicEditor.ContextWatchdog', () => {
+			expect( ClassicEditor.ContextWatchdog ).to.equal( ContextWatchdog );
 		} );
 	} );
 
