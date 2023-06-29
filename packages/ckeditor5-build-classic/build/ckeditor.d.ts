@@ -4,26 +4,40 @@
  */
 import ClassicEditorBase from '@ckeditor/ckeditor5-editor-classic/src/classiceditor';
 import { Essentials } from '@ckeditor/ckeditor5-essentials';
-import { UploadAdapter } from '@ckeditor/ckeditor5-adapter-ckfinder';
 import { Autoformat } from '@ckeditor/ckeditor5-autoformat';
 import { Bold, Italic } from '@ckeditor/ckeditor5-basic-styles';
 import { BlockQuote } from '@ckeditor/ckeditor5-block-quote';
-import { CKBox } from '@ckeditor/ckeditor5-ckbox';
-import { CKFinder } from '@ckeditor/ckeditor5-ckfinder';
-import { EasyImage } from '@ckeditor/ckeditor5-easy-image';
 import { Heading } from '@ckeditor/ckeditor5-heading';
-import { Image, ImageCaption, ImageStyle, ImageToolbar, ImageUpload, PictureEditing } from '@ckeditor/ckeditor5-image';
-import { Indent } from '@ckeditor/ckeditor5-indent';
+import { Image, ImageCaption, ImageStyle, ImageToolbar, ImageResize, ImageUpload } from '@ckeditor/ckeditor5-image';
 import { Link } from '@ckeditor/ckeditor5-link';
 import { List } from '@ckeditor/ckeditor5-list';
-import { MediaEmbed } from '@ckeditor/ckeditor5-media-embed';
 import { Paragraph } from '@ckeditor/ckeditor5-paragraph';
 import { PasteFromOffice } from '@ckeditor/ckeditor5-paste-from-office';
-import { Table, TableToolbar } from '@ckeditor/ckeditor5-table';
 import { TextTransformation } from '@ckeditor/ckeditor5-typing';
-import { CloudServices } from '@ckeditor/ckeditor5-cloud-services';
-export default class ClassicEditor extends ClassicEditorBase {
-    static builtinPlugins: (typeof TextTransformation | typeof Essentials | typeof UploadAdapter | typeof Paragraph | typeof Heading | typeof Autoformat | typeof Bold | typeof Italic | typeof BlockQuote | typeof CloudServices | typeof Image | typeof ImageCaption | typeof ImageStyle | typeof ImageToolbar | typeof ImageUpload | typeof CKBox | typeof CKFinder | typeof EasyImage | typeof Indent | typeof Link | typeof List | typeof MediaEmbed | typeof PasteFromOffice | typeof Table | typeof TableToolbar | typeof PictureEditing)[];
+import LinkImage from '@ckeditor/ckeditor5-link/src/linkimage';
+import { HorizontalLine } from '@ckeditor/ckeditor5-horizontal-line';
+import Plugin from '@ckeditor/ckeditor5-core/src/plugin';
+import { FileRepository } from '@ckeditor/ckeditor5-upload';
+import { Indent } from '@ckeditor/ckeditor5-indent';
+import { MediaEmbed } from '@ckeditor/ckeditor5-media-embed';
+import { Table, TableToolbar, TableProperties, TableCellProperties } from '@ckeditor/ckeditor5-table';
+import { SourceEditing } from '@ckeditor/ckeditor5-source-editing';
+import { HtmlEmbed } from '@ckeditor/ckeditor5-html-embed';
+import { Alignment } from '@ckeditor/ckeditor5-alignment';
+import { FontSize } from '@ckeditor/ckeditor5-font';
+import { type Editor } from '@ckeditor/ckeditor5-core';
+import './custom.css';
+declare class MarkdownPlugin extends Plugin {
+    constructor(editor: Editor);
+    static get pluginName(): 'MarkdownPlugin';
+}
+declare class CustomUploadAdapter extends Plugin {
+    static get requires(): (typeof FileRepository)[];
+    static get pluginName(): 'CustomUploadAdapter';
+    init(): void;
+}
+export default class FullEditor extends ClassicEditorBase {
+    static builtinPlugins: (typeof TextTransformation | typeof Essentials | typeof Paragraph | typeof Heading | typeof Autoformat | typeof Bold | typeof Italic | typeof BlockQuote | typeof Image | typeof ImageCaption | typeof ImageResize | typeof ImageStyle | typeof ImageToolbar | typeof ImageUpload | typeof Link | typeof LinkImage | typeof List | typeof PasteFromOffice | typeof HorizontalLine | typeof Indent | typeof MediaEmbed | typeof Table | typeof TableCellProperties | typeof TableProperties | typeof TableToolbar | typeof SourceEditing | typeof HtmlEmbed | typeof Alignment | typeof FontSize | typeof MarkdownPlugin | typeof CustomUploadAdapter)[];
     static defaultConfig: {
         toolbar: {
             items: string[];
@@ -37,3 +51,4 @@ export default class ClassicEditor extends ClassicEditorBase {
         language: string;
     };
 }
+export {};

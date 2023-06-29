@@ -5,65 +5,142 @@
 
 // The editor creator to use.
 import ClassicEditorBase from '@ckeditor/ckeditor5-editor-classic/src/classiceditor';
-
 import { Essentials } from '@ckeditor/ckeditor5-essentials';
-import { UploadAdapter } from '@ckeditor/ckeditor5-adapter-ckfinder';
 import { Autoformat } from '@ckeditor/ckeditor5-autoformat';
 import { Bold, Italic } from '@ckeditor/ckeditor5-basic-styles';
 import { BlockQuote } from '@ckeditor/ckeditor5-block-quote';
-import { CKBox } from '@ckeditor/ckeditor5-ckbox';
-import { CKFinder } from '@ckeditor/ckeditor5-ckfinder';
-import { EasyImage } from '@ckeditor/ckeditor5-easy-image';
 import { Heading } from '@ckeditor/ckeditor5-heading';
-import { Image, ImageCaption, ImageStyle, ImageToolbar, ImageUpload, PictureEditing } from '@ckeditor/ckeditor5-image';
-import { Indent } from '@ckeditor/ckeditor5-indent';
+import { Image, ImageCaption, ImageStyle, ImageToolbar, ImageResize, ImageUpload } from '@ckeditor/ckeditor5-image';
 import { Link } from '@ckeditor/ckeditor5-link';
 import { List } from '@ckeditor/ckeditor5-list';
-import { MediaEmbed } from '@ckeditor/ckeditor5-media-embed';
 import { Paragraph } from '@ckeditor/ckeditor5-paragraph';
 import { PasteFromOffice } from '@ckeditor/ckeditor5-paste-from-office';
-import { Table, TableToolbar } from '@ckeditor/ckeditor5-table';
 import { TextTransformation } from '@ckeditor/ckeditor5-typing';
-import { CloudServices } from '@ckeditor/ckeditor5-cloud-services';
+import LinkImage from '@ckeditor/ckeditor5-link/src/linkimage';
+import { HorizontalLine } from '@ckeditor/ckeditor5-horizontal-line';
+import Plugin from '@ckeditor/ckeditor5-core/src/plugin';
+import { FileRepository, type FileLoader } from '@ckeditor/ckeditor5-upload';
+import { Indent } from '@ckeditor/ckeditor5-indent';
+import { MediaEmbed } from '@ckeditor/ckeditor5-media-embed';
+import { Table, TableToolbar, TableProperties, TableCellProperties } from '@ckeditor/ckeditor5-table';
+import { SourceEditing } from '@ckeditor/ckeditor5-source-editing';
+import { HtmlEmbed } from '@ckeditor/ckeditor5-html-embed';
+import { Alignment } from '@ckeditor/ckeditor5-alignment';
+import { FontSize } from '@ckeditor/ckeditor5-font';
+import GFMDataProcessor from '@ckeditor/ckeditor5-markdown-gfm/src/gfmdataprocessor';
+import { type Editor } from '@ckeditor/ckeditor5-core';
+import './custom.css';
 
-export default class ClassicEditor extends ClassicEditorBase {
+class MarkdownPlugin extends Plugin {
+	constructor( editor: Editor ) {
+		super( editor );
+		editor.data.processor = new GFMDataProcessor( this.editor.editing.view.document );
+	}
+	public static get pluginName(): 'MarkdownPlugin' {
+		return 'MarkdownPlugin';
+	}
+}
+
+class Adapter {
+	private loader: FileLoader;
+	private uploadFunction: Function;
+
+	constructor( loader: FileLoader, uploadFunction: Function ) {
+		this.loader = loader;
+		this.uploadFunction = uploadFunction;
+	}
+	public upload() {
+		return this.loader.file.then( file => this.uploadFunction( file ) );
+	}
+	public abort() {
+		// Do nothing
+	}
+}
+
+class CustomUploadAdapter extends Plugin {
+	public static get requires() {
+		return [ FileRepository ];
+	}
+	public static get pluginName(): 'CustomUploadAdapter' {
+		return 'CustomUploadAdapter';
+	}
+	public init(): void {
+		const { uploadFunction } = this.editor.config.get( 'customUploadAdapter' ) as { uploadFunction: Function };
+
+		if ( typeof uploadFunction !== 'function' ) {
+			console.warn( 'No `uploadFunction` was provided' );
+			return;
+		}
+
+		this.editor.plugins.get( FileRepository ).createUploadAdapter = loader => {
+			return new Adapter( loader, uploadFunction );
+		};
+	}
+}
+
+export default class FullEditor extends ClassicEditorBase {
 	public static override builtinPlugins = [
 		Essentials,
-		UploadAdapter,
 		Autoformat,
 		Bold,
 		Italic,
 		BlockQuote,
-		CKBox,
-		CKFinder,
-		CloudServices,
-		EasyImage,
 		Heading,
 		Image,
+		ImageUpload,
+		Link,
+		LinkImage,
+		List,
+		Paragraph,
+		PasteFromOffice,
+		TextTransformation,
+		HorizontalLine,
+		CustomUploadAdapter,
 		ImageCaption,
 		ImageStyle,
 		ImageToolbar,
-		ImageUpload,
 		Indent,
-		Link,
-		List,
 		MediaEmbed,
-		Paragraph,
-		PasteFromOffice,
-		PictureEditing,
 		Table,
 		TableToolbar,
-		TextTransformation
+		SourceEditing,
+		HtmlEmbed,
+		Alignment,
+		FontSize,
+		ImageResize,
+		TableProperties,
+		TableCellProperties,
+		MarkdownPlugin
 	];
 
 	public static override defaultConfig = {
 		toolbar: {
 			items: [
-				'undo', 'redo',
-				'|', 'heading',
-				'|', 'bold', 'italic',
-				'|', 'link', 'uploadImage', 'insertTable', 'blockQuote', 'mediaEmbed',
-				'|', 'bulletedList', 'numberedList', 'outdent', 'indent'
+				'heading',
+				'|',
+				'bold',
+				'italic',
+				'fontSize',
+				'alignment',
+				'|',
+				'link',
+				'bulletedList',
+				'numberedList',
+				'blockQuote',
+				'horizontalLine',
+				'|',
+				'outdent',
+				'indent',
+				'|',
+				'uploadImage',
+				'insertTable',
+				'mediaEmbed',
+				'htmlEmbed',
+				'|',
+				'sourceEditing',
+				'|',
+				'undo',
+				'redo'
 			]
 		},
 		image: {
@@ -80,7 +157,9 @@ export default class ClassicEditor extends ClassicEditorBase {
 			contentToolbar: [
 				'tableColumn',
 				'tableRow',
-				'mergeTableCells'
+				'mergeTableCells',
+				'tableProperties',
+				'tableCellProperties'
 			]
 		},
 		// This value must be kept in sync with the language defined in webpack.config.js.
